@@ -38,7 +38,15 @@
     "triz",
     "first-principles"
   ],
-  "author": "Deliberate AI Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shanmukhaditya/deliberate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shanmukhaditya/deliberate/issues"
+  },
+  "homepage": "https://github.com/shanmukhaditya/deliberate#readme",
+  "author": "Shanmukh Aditya <shanmukhaditya9@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
