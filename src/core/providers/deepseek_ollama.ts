@@ -72,6 +72,17 @@ export class OllamaProvider implements LLMProvider {
     this.defaultModel = model;
   }
 
+  static async getInstalledModels(baseUrl = 'http://localhost:11434'): Promise<string[]> {
+    try {
+      const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(1500) });
+      if (!res.ok) return [];
+      const data = (await res.json()) as { models?: { name: string }[] };
+      return data.models?.map((m) => m.name) || [];
+    } catch {
+      return [];
+    }
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       const res = await fetch(`${this.baseUrl}/api/tags`, { signal: AbortSignal.timeout(1500) });

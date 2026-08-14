@@ -2,6 +2,7 @@ import * as p from '@clack/prompts';
 import picocolors from 'picocolors';
 import { ConfigManager, ModelSelection, UserDeliberateConfig } from '../core/config.js';
 import { PersonaId } from '../core/types.js';
+import { OllamaProvider } from '../core/providers/deepseek_ollama.js';
 
 export const getProviderOptions = () => [
   { value: 'gemini', label: 'Google Gemini', hint: 'Ultra-fast, massive context window (Gemini 2.5 Flash/Pro)' },
@@ -10,6 +11,160 @@ export const getProviderOptions = () => [
   { value: 'deepseek', label: 'DeepSeek', hint: 'Deep mathematical & logic reasoning (DeepSeek-R1 / V3)' },
   { value: 'ollama', label: 'Local Ollama', hint: '100% Free, private, and offline on localhost:11434' },
 ];
+
+export async function promptModelForProvider(
+  provider: ModelSelection['provider'],
+  entityName: string
+): Promise<string> {
+  if (provider === 'ollama') {
+    const installed = await OllamaProvider.getInstalledModels();
+    const modelOptions = installed.length > 0
+      ? installed.map((m) => ({ value: m, label: m, hint: 'Installed locally in Ollama' }))
+      : [
+          { value: 'deepseek-r1:14b', label: 'deepseek-r1:14b', hint: 'Recommended for reasoning' },
+          { value: 'qwen2.5-coder:32b', label: 'qwen2.5-coder:32b', hint: 'Recommended for coding' },
+          { value: 'llama3.3:latest', label: 'llama3.3:latest', hint: 'General reasoning' },
+        ];
+
+    modelOptions.push({ value: '__custom__', label: 'Custom / Other Ollama Model...', hint: 'Type custom model tag' });
+
+    const selectedModel = await p.select({
+      message: `Select exact Ollama model for ${picocolors.bold(entityName)}:`,
+      options: modelOptions,
+      initialValue: modelOptions[0]?.value,
+    });
+
+    if (p.isCancel(selectedModel)) {
+      p.cancel('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (selectedModel === '__custom__') {
+      const customTag = await p.text({
+        message: `Enter the Ollama model tag for ${entityName} (e.g. mistral:latest, phi4:latest):`,
+        placeholder: 'deepseek-r1:14b',
+        validate: (val) => (!val || val.trim().length === 0 ? 'Model tag cannot be empty.' : undefined),
+      });
+
+      if (p.isCancel(customTag)) {
+        p.cancel('Setup cancelled.');
+        process.exit(0);
+      }
+      return customTag.trim();
+    }
+
+    return selectedModel as string;
+  }
+
+  if (provider === 'gemini') {
+    const geminiOptions = [
+      { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash', hint: 'Recommended (Ultra-fast, sub-second latency)' },
+      { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro', hint: 'Deep reasoning & complex architectures' },
+      { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash', hint: 'Standard fast tier' },
+      { value: '__custom__', label: 'Custom Gemini Model ID...', hint: 'Type custom model name' },
+    ];
+
+    const chosen = await p.select({
+      message: `Select Gemini model for ${picocolors.bold(entityName)}:`,
+      options: geminiOptions,
+      initialValue: 'gemini-2.5-flash',
+    });
+
+    if (p.isCancel(chosen)) {
+      p.cancel('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (chosen === '__custom__') {
+      const custom = await p.text({ message: 'Enter custom Gemini model ID:', placeholder: 'gemini-2.5-pro' });
+      if (p.isCancel(custom)) process.exit(0);
+      return custom.trim();
+    }
+    return chosen as string;
+  }
+
+  if (provider === 'anthropic') {
+    const claudeOptions = [
+      { value: 'claude-3-7-sonnet-20250219', label: 'claude-3-7-sonnet', hint: 'Recommended (Frontier reasoning + hybrid thinking)' },
+      { value: 'claude-3-5-haiku-20241022', label: 'claude-3-5-haiku', hint: 'Lightning fast filtering' },
+      { value: 'claude-3-opus-20240229', label: 'claude-3-opus', hint: 'Heavy analysis' },
+      { value: '__custom__', label: 'Custom Claude Model ID...', hint: 'Type custom model name' },
+    ];
+
+    const chosen = await p.select({
+      message: `Select Claude model for ${picocolors.bold(entityName)}:`,
+      options: claudeOptions,
+      initialValue: 'claude-3-7-sonnet-20250219',
+    });
+
+    if (p.isCancel(chosen)) {
+      p.cancel('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (chosen === '__custom__') {
+      const custom = await p.text({ message: 'Enter custom Claude model ID:', placeholder: 'claude-3-7-sonnet-20250219' });
+      if (p.isCancel(custom)) process.exit(0);
+      return custom.trim();
+    }
+    return chosen as string;
+  }
+
+  if (provider === 'openai') {
+    const openaiOptions = [
+      { value: 'gpt-4o', label: 'gpt-4o', hint: 'Recommended (High intelligence, fast coding)' },
+      { value: 'o3-mini', label: 'o3-mini', hint: 'Specialized reasoning model' },
+      { value: 'gpt-4o-mini', label: 'gpt-4o-mini', hint: 'Affordable lightweight model' },
+      { value: '__custom__', label: 'Custom OpenAI Model ID...', hint: 'Type custom model name' },
+    ];
+
+    const chosen = await p.select({
+      message: `Select OpenAI model for ${picocolors.bold(entityName)}:`,
+      options: openaiOptions,
+      initialValue: 'gpt-4o',
+    });
+
+    if (p.isCancel(chosen)) {
+      p.cancel('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (chosen === '__custom__') {
+      const custom = await p.text({ message: 'Enter custom OpenAI model ID:', placeholder: 'gpt-4o' });
+      if (p.isCancel(custom)) process.exit(0);
+      return custom.trim();
+    }
+    return chosen as string;
+  }
+
+  if (provider === 'deepseek') {
+    const deepseekOptions = [
+      { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)', hint: 'Recommended (Deep chain-of-thought math/logic)' },
+      { value: 'deepseek-chat', label: 'deepseek-chat (V3)', hint: 'Fast conversational & coding' },
+      { value: '__custom__', label: 'Custom DeepSeek Model ID...', hint: 'Type custom model name' },
+    ];
+
+    const chosen = await p.select({
+      message: `Select DeepSeek model for ${picocolors.bold(entityName)}:`,
+      options: deepseekOptions,
+      initialValue: 'deepseek-reasoner',
+    });
+
+    if (p.isCancel(chosen)) {
+      p.cancel('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (chosen === '__custom__') {
+      const custom = await p.text({ message: 'Enter custom DeepSeek model ID:', placeholder: 'deepseek-reasoner' });
+      if (p.isCancel(custom)) process.exit(0);
+      return custom.trim();
+    }
+    return chosen as string;
+  }
+
+  return '';
+}
 
 export class ModelConfigWizard {
   static async run(): Promise<UserDeliberateConfig> {
@@ -22,12 +177,12 @@ export class ModelConfigWizard {
       options: [
         {
           value: 'unified',
-          label: 'Unified: Use ONE model for all personas',
-          hint: 'Simple, fast, uses a single API key',
+          label: 'Unified: Use ONE provider & model for all personas',
+          hint: 'Simple, fast, uses a single API key or local model',
         },
         {
           value: 'individual',
-          label: 'Mix-and-Match: Individually select models per persona',
+          label: 'Mix-and-Match: Individually select provider & model per persona',
           hint: 'Elite setup (e.g. DeepSeek-R1 for Red-Team + Claude 3.7 for Architecture)',
         },
       ],
@@ -51,15 +206,21 @@ export class ModelConfigWizard {
         process.exit(0);
       }
 
+      const selectedModel = await promptModelForProvider(
+        selectedProvider as ModelSelection['provider'],
+        'All Personas'
+      );
+
       config = {
         mode: 'unified',
         unified: {
           provider: selectedProvider as ModelSelection['provider'],
+          model: selectedModel,
         },
       };
     } else {
       p.note(
-        'You can now assign specialized models to each persona for maximum cognitive diversity.',
+        'You can now assign specialized providers and exact models to each persona for maximum cognitive diversity.',
         'Council Mix-and-Match Configuration'
       );
 
@@ -76,7 +237,7 @@ export class ModelConfigWizard {
 
       for (const persona of personasToConfigure) {
         const choice = await p.select({
-          message: `Model for ${picocolors.bold(persona.name)} (${picocolors.dim(persona.desc)}):`,
+          message: `Provider for ${picocolors.bold(persona.name)} (${picocolors.dim(persona.desc)}):`,
           initialValue: persona.defaultProvider,
           options: getProviderOptions(),
         });
@@ -86,28 +247,40 @@ export class ModelConfigWizard {
           process.exit(0);
         }
 
+        const modelChoice = await promptModelForProvider(
+          choice as ModelSelection['provider'],
+          persona.name
+        );
+
         personaSelections[persona.id] = {
           provider: choice as ModelSelection['provider'],
+          model: modelChoice,
         };
       }
 
       // Synthesizer Model
-      const synthChoice = await p.select({
-        message: `Model for ${picocolors.bold('Master Dialectical Synthesizer')} (${picocolors.dim('Reconciles Pareto Blueprint')}):`,
+      const synthProviderChoice = await p.select({
+        message: `Provider for ${picocolors.bold('Master Dialectical Synthesizer')} (${picocolors.dim('Reconciles Pareto Blueprint')}):`,
         initialValue: 'anthropic',
         options: getProviderOptions(),
       });
 
-      if (p.isCancel(synthChoice)) {
+      if (p.isCancel(synthProviderChoice)) {
         p.cancel('Setup cancelled.');
         process.exit(0);
       }
+
+      const synthModelChoice = await promptModelForProvider(
+        synthProviderChoice as ModelSelection['provider'],
+        'Master Synthesizer'
+      );
 
       config = {
         mode: 'individual',
         personas: personaSelections,
         synthesizer: {
-          provider: synthChoice as ModelSelection['provider'],
+          provider: synthProviderChoice as ModelSelection['provider'],
+          model: synthModelChoice,
         },
       };
     }
