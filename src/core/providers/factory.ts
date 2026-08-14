@@ -12,7 +12,7 @@ export class ProviderFactory {
       switch (preferredProvider.toLowerCase()) {
         case 'gemini':
         case 'google':
-          return new GeminiProvider(undefined, model || 'gemini-1.5-flash');
+          return new GeminiProvider(undefined, model);
         case 'openai':
         case 'codex':
         case 'gpt':
@@ -32,7 +32,7 @@ export class ProviderFactory {
 
     // Auto-detection hierarchy based on environment variables
     if (process.env.GEMINI_API_KEY) {
-      return new GeminiProvider(process.env.GEMINI_API_KEY, model || 'gemini-1.5-flash');
+      return new GeminiProvider(process.env.GEMINI_API_KEY, model);
     }
     if (process.env.ANTHROPIC_API_KEY) {
       return new AnthropicProvider(process.env.ANTHROPIC_API_KEY, model || 'claude-3-7-sonnet-20250219');

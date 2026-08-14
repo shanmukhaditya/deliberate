@@ -6,14 +6,58 @@ export class GeminiProvider implements LLMProvider {
   private apiKey: string;
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
+  private static discoveredModels: string[] | null = null;
 
-  constructor(apiKey?: string, model = 'gemini-2.0-flash') {
+  constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || '';
-    this.defaultModel = model;
+    this.defaultModel = model || 'gemini-2.5-flash';
   }
 
   async isAvailable(): Promise<boolean> {
     return Boolean(this.apiKey);
+  }
+
+  /**
+   * Dynamically query Google AI Studio API for all available models on this API key
+   */
+  private async getAvailableModels(): Promise<string[]> {
+    if (GeminiProvider.discoveredModels && GeminiProvider.discoveredModels.length > 0) {
+      return GeminiProvider.discoveredModels;
+    }
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+      if (!res.ok) return [];
+
+      const data = (await res.json()) as {
+        models?: { name: string; supportedGenerationMethods?: string[] }[];
+      };
+
+      const validModels = (data.models || [])
+        .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m) => m.name.replace(/^models\//, ''))
+        .filter((name) => !name.includes('embedding') && !name.includes('aqa'));
+
+      if (validModels.length > 0) {
+        // Sort with latest/pro/flash first
+        validModels.sort((a, b) => {
+          if (a.includes('2.5-pro') || a.includes('3.0')) return -1;
+          if (b.includes('2.5-pro') || b.includes('3.0')) return 1;
+          if (a.includes('2.5-flash')) return -1;
+          if (b.includes('2.5-flash')) return 1;
+          if (a.includes('2.0-flash')) return -1;
+          if (b.includes('2.0-flash')) return 1;
+          return 0;
+        });
+
+        GeminiProvider.discoveredModels = validModels;
+        return validModels;
+      }
+    } catch {
+      // ignore network errors and use fallback list
+    }
+    return [];
   }
 
   async generate(options: LLMRequestOptions): Promise<LLMResponse> {
@@ -26,16 +70,22 @@ export class GeminiProvider implements LLMProvider {
       parts: [{ text: m.content }],
     }));
 
-    // Cascade of latest active models
-    const fallbackChain = [
-      GeminiProvider.resolvedActiveModel || this.defaultModel,
+    // 1. Fetch dynamically available models from Google API
+    const liveModels = await this.getAvailableModels();
+
+    // 2. Build prioritized candidate list with dynamic discovery first
+    const candidateModels = [
+      GeminiProvider.resolvedActiveModel,
+      this.defaultModel,
+      ...liveModels,
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
       'gemini-2.0-flash',
       'gemini-1.5-flash',
       'gemini-1.5-pro',
-      'gemini-2.0-flash-lite',
     ];
 
-    const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
+    const modelsToTry = Array.from(new Set(candidateModels.filter(Boolean) as string[]));
     let lastError: Error | null = null;
 
     for (const modelName of modelsToTry) {
@@ -56,13 +106,17 @@ export class GeminiProvider implements LLMProvider {
         });
 
         if (response.status === 404) {
-          // Model deprecated or not found on this API key tier, try next
           continue;
         }
 
         if (!response.ok) {
           const errText = await response.text();
-          if (errText.includes('NOT_FOUND') || errText.includes('404') || errText.includes('no longer available')) {
+          if (
+            errText.includes('NOT_FOUND') ||
+            errText.includes('404') ||
+            errText.includes('no longer available') ||
+            errText.includes('not supported')
+          ) {
             continue;
           }
           throw new Error(`Gemini API error (${response.status}): ${errText}`);
@@ -76,7 +130,7 @@ export class GeminiProvider implements LLMProvider {
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         const parsedJson = options.responseFormat === 'json' ? extractJsonFromResponse(text) : undefined;
 
-        // Remember the working model for the rest of the session
+        // Remember working active model
         GeminiProvider.resolvedActiveModel = modelName;
 
         return {
@@ -91,7 +145,11 @@ export class GeminiProvider implements LLMProvider {
         };
       } catch (err: unknown) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        if (lastError.message.includes('404') || lastError.message.includes('NOT_FOUND')) {
+        if (
+          lastError.message.includes('404') ||
+          lastError.message.includes('NOT_FOUND') ||
+          lastError.message.includes('no longer available')
+        ) {
           continue;
         }
         throw lastError;

@@ -1,6 +1,6 @@
 {
   "name": "deliberate-ai",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "description": "Deep Ideation, Multi-Agent Deliberation & Systematic Thinking Engine for AI Coding Agents",
   "main": "dist/index.js",
