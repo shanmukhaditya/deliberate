@@ -58,16 +58,16 @@ export async function promptModelForProvider(
 
   if (provider === 'gemini') {
     const geminiOptions = [
-      { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash', hint: 'Recommended (Ultra-fast, sub-second latency)' },
-      { value: 'gemini-2.5-pro', label: 'gemini-2.5-pro', hint: 'Deep reasoning & complex architectures' },
-      { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash', hint: 'Standard fast tier' },
+      { value: 'gemini-1.5-flash', label: 'gemini-1.5-flash', hint: 'Recommended (Ultra-fast, high throughput)' },
+      { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash', hint: 'Next-gen multimodal & speed' },
+      { value: 'gemini-1.5-pro', label: 'gemini-1.5-pro', hint: 'Deep reasoning & complex system designs' },
       { value: '__custom__', label: 'Custom Gemini Model ID...', hint: 'Type custom model name' },
     ];
 
     const chosen = await p.select({
       message: `Select Gemini model for ${picocolors.bold(entityName)}:`,
       options: geminiOptions,
-      initialValue: 'gemini-2.5-flash',
+      initialValue: 'gemini-1.5-flash',
     });
 
     if (p.isCancel(chosen)) {
