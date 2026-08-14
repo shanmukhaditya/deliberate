@@ -7,7 +7,7 @@ export class OpenAIProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(apiKey?: string, model = 'gpt-4o') {
+  constructor(apiKey?: string, model = 'gpt-5.6') {
     this.apiKey = apiKey || process.env.OPENAI_API_KEY || '';
     this.defaultModel = model;
   }
@@ -23,10 +23,12 @@ export class OpenAIProvider implements LLMProvider {
 
     const fallbackChain = [
       OpenAIProvider.resolvedActiveModel || this.defaultModel,
+      'gpt-5.6',
+      'gpt-5',
+      'o3-mini',
+      'o1',
       'gpt-4o',
       'gpt-4o-mini',
-      'o3-mini',
-      'gpt-4-turbo',
     ];
 
     const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));

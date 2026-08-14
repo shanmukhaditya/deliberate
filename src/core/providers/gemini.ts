@@ -10,7 +10,7 @@ export class GeminiProvider implements LLMProvider {
 
   constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || '';
-    this.defaultModel = model || 'gemini-2.5-flash';
+    this.defaultModel = model || 'gemini-3.6-flash';
   }
 
   async isAvailable(): Promise<boolean> {
@@ -40,22 +40,25 @@ export class GeminiProvider implements LLMProvider {
         .filter((name) => !name.includes('embedding') && !name.includes('aqa'));
 
       if (validModels.length > 0) {
-        // Sort with latest/pro/flash first
+        // Sort prioritizing 3.6, 3.5, 3.0, 2.5, 2.0
         validModels.sort((a, b) => {
-          if (a.includes('2.5-pro') || a.includes('3.0')) return -1;
-          if (b.includes('2.5-pro') || b.includes('3.0')) return 1;
-          if (a.includes('2.5-flash')) return -1;
-          if (b.includes('2.5-flash')) return 1;
-          if (a.includes('2.0-flash')) return -1;
-          if (b.includes('2.0-flash')) return 1;
-          return 0;
+          const getScore = (s: string) => {
+            if (s.includes('3.6')) return 100;
+            if (s.includes('3.5')) return 90;
+            if (s.includes('3.0') || s.includes('3-')) return 80;
+            if (s.includes('2.5-pro')) return 70;
+            if (s.includes('2.5-flash')) return 60;
+            if (s.includes('2.0')) return 50;
+            return 10;
+          };
+          return getScore(b) - getScore(a);
         });
 
         GeminiProvider.discoveredModels = validModels;
         return validModels;
       }
     } catch {
-      // ignore network errors and use fallback list
+      // ignore network errors and use fallback chain
     }
     return [];
   }
@@ -78,8 +81,11 @@ export class GeminiProvider implements LLMProvider {
       GeminiProvider.resolvedActiveModel,
       this.defaultModel,
       ...liveModels,
-      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-pro',
+      'gemini-3-flash',
       'gemini-2.5-pro',
+      'gemini-2.5-flash',
       'gemini-2.0-flash',
       'gemini-1.5-flash',
       'gemini-1.5-pro',
