@@ -1,6 +1,6 @@
 {
   "name": "deliberate-ai",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "description": "Deep Ideation, Multi-Agent Deliberation & Systematic Thinking Engine for AI Coding Agents",
   "main": "dist/index.js",
@@ -51,6 +51,7 @@
   "author": "Shanmukh Aditya <shanmukhaditya9@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "@modelcontextprotocol/sdk": "^1.6.1",
     "boxen": "^7.1.1",
     "cli-table3": "^0.6.5",

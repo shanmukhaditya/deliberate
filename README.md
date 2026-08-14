@@ -63,6 +63,33 @@ npx deliberate-ai brainstorm "Real-time state sync for collaborative canvas with
 
 ---
 
+## 🎛️ Interactive Model & Council Persona Selector
+
+`Deliberate` comes with an interactive terminal wizard that lets you configure your models:
+
+```bash
+# Launch the interactive configuration wizard
+npx deliberate-ai config
+
+# Or pass -i to configure before running a brainstorm
+npx deliberate-ai brainstorm "Multi-tenant auth engine" -i
+```
+
+You can choose between two modes:
+1. **Unified (One Model for All)**: Uses a single provider (e.g. Gemini 2.5 Flash, Claude 3.7, or GPT-4o) across all topologies and council debates.
+2. **Council Mix-and-Match (Elite Multi-Agent Diversity)**: Assign specialized models to different personas for maximum cognitive diversity:
+   - 🏛️ **The Principal Architect** ➔ *Anthropic Claude 3.7 Sonnet*
+   - 🥊 **The Ruthless Contrarian** ➔ *DeepSeek-R1 Reasoner*
+   - ⚡ **The Performance Hacker** ➔ *Google Gemini 2.5 Flash*
+   - 💎 **The DX & Ergonomics Purist** ➔ *Anthropic Claude 3.7 Sonnet*
+   - 🛡️ **The Security Auditor** ➔ *OpenAI GPT-4o*
+   - 🔨 **The Pragmatist** ➔ *Local Ollama / Llama 3.3*
+   - ⚡ **Master Synthesizer** ➔ *Anthropic Claude 3.7 Sonnet*
+
+*(Configurations are saved automatically to `./deliberate.config.json` or `~/.deliberaterc`)*
+
+---
+
 ## 🔑 How to Configure Your LLM Provider
 
 `Deliberate` natively connects directly to frontier LLMs or free local models:

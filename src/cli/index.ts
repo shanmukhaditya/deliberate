@@ -23,10 +23,16 @@ program
   .option('-m, --mode <mode>', 'Deliberation mode: flash, council, deep-explore', 'council')
   .option('-p, --provider <provider>', 'LLM provider: gemini, anthropic, openai, deepseek, ollama, mock')
   .option('--model <model>', 'Specific model identifier')
+  .option('-i, --interactive', 'Interactively select models and personas before running')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
   .action(async (goal: string, options) => {
     DeliberateTui.printBanner();
+
+    if (options.interactive) {
+      const { ModelConfigWizard } = await import('./wizard.js');
+      await ModelConfigWizard.run();
+    }
 
     const spinner = ora({
       text: picocolors.cyan('Initializing Deliberation Engine...'),
@@ -158,6 +164,15 @@ program
       console.error(err);
       process.exit(1);
     }
+  });
+
+// Config Command (Interactive Model & Persona Selector)
+program
+  .command('config')
+  .description('Interactively select and configure LLM models for all or individual council personas')
+  .action(async () => {
+    const { ModelConfigWizard } = await import('./wizard.js');
+    await ModelConfigWizard.run();
   });
 
 // Install Command for Agent Skills & Rules
