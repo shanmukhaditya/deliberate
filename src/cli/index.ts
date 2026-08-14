@@ -175,6 +175,51 @@ program
     await ModelConfigWizard.run();
   });
 
+// Direct Model Management Command
+program
+  .command('model')
+  .description('View or update configured models')
+  .argument('[action]', 'Action: list | set | get', 'list')
+  .argument('[provider]', 'Provider: gemini | anthropic | openai | deepseek | ollama')
+  .argument('[modelName]', 'Model identifier to set (e.g. gemini-2.0-flash, claude-3-7-sonnet)')
+  .option('-g, --global', 'Apply globally to ~/.deliberaterc', false)
+  .action(async (action, provider, modelName, options) => {
+    const { ConfigManager } = await import('../core/config.js');
+    const config = (await ConfigManager.load()) || { mode: 'unified', unified: { provider: 'gemini' } };
+
+    if (action === 'list' || action === 'get') {
+      console.log(picocolors.bold(picocolors.cyan('\n⚡ Current Deliberate Model Configuration:\n')));
+      console.log(`  Mode: ${picocolors.bold(config.mode)}`);
+      if (config.mode === 'unified') {
+        console.log(`  Provider: ${picocolors.green(config.unified?.provider || 'auto-detect')}`);
+        console.log(`  Model: ${picocolors.green(config.unified?.model || 'latest default')}`);
+      } else {
+        console.log(picocolors.yellow('  Persona Assignments:'));
+        for (const [persona, sel] of Object.entries(config.personas || {})) {
+          console.log(`   • ${persona}: ${picocolors.cyan(sel?.provider || 'default')} (${picocolors.dim(sel?.model || 'latest default')})`);
+        }
+      }
+      console.log(picocolors.dim('\nTo change models interactively, run: npx deliberate-ai config\n'));
+      return;
+    }
+
+    if (action === 'set') {
+      if (!provider) {
+        console.error(picocolors.red('Error: Please specify a provider (e.g. deliberate model set gemini gemini-2.0-flash)'));
+        process.exit(1);
+      }
+
+      config.mode = 'unified';
+      config.unified = {
+        provider: provider as any,
+        model: modelName,
+      };
+
+      const savedPath = await ConfigManager.save(config, options.global);
+      console.log(picocolors.green(`✔ Updated model to ${picocolors.bold(provider)} (${modelName || 'latest default'}) in ${savedPath}!`));
+    }
+  });
+
 // Install Command for Agent Skills & Rules
 program
   .command('install')
