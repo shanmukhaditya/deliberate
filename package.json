@@ -1,0 +1,58 @@
+{
+  "name": "deliberate",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Deep Ideation, Multi-Agent Deliberation & Systematic Thinking Engine for AI Coding Agents",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "deliberate": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "integrations",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "dev": "tsx src/cli/index.ts",
+    "test": "tsx --test tests/**/*.test.ts",
+    "mcp": "node dist/mcp/server.js"
+  },
+  "keywords": [
+    "ai",
+    "reasoning",
+    "ideation",
+    "brainstorming",
+    "deliberation",
+    "mcp",
+    "model-context-protocol",
+    "claude-code",
+    "antigravity",
+    "codex",
+    "devin",
+    "cursor",
+    "multi-agent",
+    "triz",
+    "first-principles"
+  ],
+  "author": "Deliberate AI Contributors",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "boxen": "^7.1.1",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "ora": "^8.1.1",
+    "picocolors": "^1.1.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}

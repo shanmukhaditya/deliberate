@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "deliberate_tools",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "deliberate_brainstorm",
+        "description": "Engage deep System-2 ideation, first-principles deconstruction, adversarial council debate, and Pareto trade-off synthesis before writing code.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "The architectural challenge, system design, or feature to deliberate upon."
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["flash", "council", "deep-explore"],
+              "description": "Deliberation mode. flash (10s check), council (balanced debate), deep-explore (full Tree-of-Thoughts)."
+            },
+            "context": {
+              "type": "string",
+              "description": "Relevant codebase background, existing tech stack, or data volume constraints."
+            },
+            "constraints": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hard engineering constraints (e.g., zero external dependencies, p99 < 5ms)."
+            }
+          },
+          "required": ["goal"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "deliberate_red_team",
+        "description": "Run an adversarial stress-test against a file or architecture to uncover failure modes, race conditions, memory leaks, security vulnerabilities, and missing invariants.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "goal": {
+              "type": "string",
+              "description": "What the code is attempting to accomplish or migrate."
+            },
+            "filePath": {
+              "type": "string",
+              "description": "Path to the target file being evaluated."
+            },
+            "fileContent": {
+              "type": "string",
+              "description": "The actual source code to red-team."
+            }
+          },
+          "required": ["goal", "fileContent"]
+        }
+      }
+    }
+  ]
+}

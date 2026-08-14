@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "deliberate": {
+      "command": "npx",
+      "args": ["-y", "deliberate", "mcp"],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      }
+    }
+  }
+}
