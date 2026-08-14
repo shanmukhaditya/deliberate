@@ -3,7 +3,7 @@
 > **Deep Ideation, Multi-Agent Deliberation & Systematic Thinking Engine for AI Coding Agents.**  
 > *Empowers Claude Code, Antigravity, Codex, Devin, and Cursor with structured "System 2" reasoning before writing code.*
 
-[![npm version](https://img.shields.io/npm/v/deliberate?color=blue&style=flat-square)](https://www.npmjs.com/package/deliberate)
+[![npm version](https://img.shields.io/npm/v/deliberate-ai?color=blue&style=flat-square)](https://www.npmjs.com/package/deliberate-ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-purple?style=flat-square)](https://modelcontextprotocol.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
@@ -28,44 +28,58 @@ When AI coding tools (Claude Code, Antigravity, Devin, Codex) tackle non-trivial
 
 ---
 
-## ⚡ 1-Minute Skill Installation for AI Coding Tools
+## ⚡ Installation & Agent Setup
 
-Users can install Deliberate into their coding agents with a single command:
+You can install and use Deliberate in your favorite workflow:
 
-### Universal CLI Installer
+### 1. Global CLI / NPX (Zero Setup)
 ```bash
-# Auto-detects and installs for Antigravity, Cursor, Windsurf, and Copilot
-npx deliberate install
+# Run instantly with npx
+npx deliberate-ai brainstorm "Design an ultra-low latency event streamer"
+
+# Or install globally
+npm install -g deliberate-ai
+deliberate brainstorm "Design an ultra-low latency event streamer"
 ```
 
-### Or via `curl`
+### 2. Universal Skill & Rules Installer (1 Command)
+Automatically installs the skill and rules into your local AI coding tools:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/install.sh | bash
+npx deliberate-ai install
+```
+*(Or via curl without Node: `curl -fsSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/install.sh | bash`)*
+
+### 3. Tool-Specific Setup
+
+#### 🤖 Claude Code / Claude Desktop
+Add `deliberate-ai` to Claude Code via MCP:
+```bash
+claude mcp add deliberate npx -y deliberate-ai mcp
 ```
 
-### Or Tool-by-Tool:
-* **Claude Code**:
-  ```bash
-  claude mcp add deliberate npx -y deliberate mcp
-  ```
-* **Google Antigravity**:
-  ```bash
-  mkdir -p ~/.gemini/antigravity/skills/deliberate
-  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > ~/.gemini/antigravity/skills/deliberate/SKILL.md
-  ```
-* **Cursor / Windsurf**:
-  ```bash
-  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/cursor/.cursorrules > .cursorrules
-  ```
-* **GitHub Copilot / Codex**:
-  ```bash
-  mkdir -p .github
-  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > .github/copilot-instructions.md
-  ```
+#### 🌌 Google Antigravity
+Install the skill into Antigravity:
+```bash
+mkdir -p ~/.gemini/antigravity/skills/deliberate
+curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > ~/.gemini/antigravity/skills/deliberate/SKILL.md
+```
+
+#### 💻 Cursor & Windsurf
+Add the rules file to your project root:
+```bash
+curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/cursor/.cursorrules > .cursorrules
+```
+
+#### 🐙 GitHub Copilot & OpenAI Codex
+Add instructions to your repository:
+```bash
+mkdir -p .github
+curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > .github/copilot-instructions.md
+```
 
 ---
 
-## 🚀 Quickstart Usage
+## 🚀 CLI Commands & Usage
 
 ```bash
 # Brainstorm a high-concurrency architecture
