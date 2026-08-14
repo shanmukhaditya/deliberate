@@ -1,6 +1,6 @@
 {
   "name": "deliberate-ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Deep Ideation, Multi-Agent Deliberation & Systematic Thinking Engine for AI Coding Agents",
   "main": "dist/index.js",
@@ -16,11 +16,12 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/cli/index.js",
     "start": "node dist/cli/index.js",
     "dev": "tsx src/cli/index.ts",
     "test": "tsx --test tests/**/*.test.ts",
-    "mcp": "node dist/mcp/server.js"
+    "mcp": "node dist/mcp/server.js",
+    "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
     "ai",
