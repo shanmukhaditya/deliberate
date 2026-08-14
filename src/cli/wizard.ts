@@ -5,10 +5,10 @@ import { PersonaId } from '../core/types.js';
 import { OllamaProvider } from '../core/providers/deepseek_ollama.js';
 
 export const getProviderOptions = () => [
-  { value: 'gemini', label: 'Google Gemini', hint: 'Fast, high-throughput (gemini-2.0-flash / 1.5-pro)' },
-  { value: 'anthropic', label: 'Anthropic Claude', hint: 'Elite architecture & reasoning (claude-3-7-sonnet / 3.5-sonnet)' },
-  { value: 'openai', label: 'OpenAI / Codex', hint: 'Flagship reasoning & coding (gpt-4o / o3-mini / o1)' },
-  { value: 'deepseek', label: 'DeepSeek', hint: 'Frontier chain-of-thought logic (deepseek-reasoner R1 / V3)' },
+  { value: 'gemini', label: 'Google Gemini', hint: 'Frontier speed & 2M context (gemini-3.7-flash / 3.1-pro)' },
+  { value: 'anthropic', label: 'Anthropic Claude', hint: 'State-of-the-art agentic architecture (claude-sonnet-5 / opus-5 / fable-5)' },
+  { value: 'openai', label: 'OpenAI / Codex', hint: 'Flagship reasoning & cyber auditing (gpt-5.6-sol / luna / cyber)' },
+  { value: 'deepseek', label: 'DeepSeek', hint: '1.6T MoE reasoning flagship (deepseek-v4-pro / v4-flash)' },
   { value: 'ollama', label: 'Local Ollama', hint: '100% Free, private, and offline on localhost:11434' },
 ];
 
@@ -21,8 +21,8 @@ export async function promptModelForProvider(
     const modelOptions = installed.length > 0
       ? installed.map((m) => ({ value: m, label: m, hint: 'Installed locally in Ollama' }))
       : [
-          { value: 'deepseek-r1:14b', label: 'deepseek-r1:14b', hint: 'Recommended for reasoning' },
-          { value: 'deepseek-r1:32b', label: 'deepseek-r1:32b', hint: 'Heavy reasoning model' },
+          { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash', hint: 'Recommended for reasoning' },
+          { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro', hint: 'Flagship MoE model' },
           { value: 'qwen2.5-coder:32b', label: 'qwen2.5-coder:32b', hint: 'Elite local coding' },
           { value: 'llama3.3:70b', label: 'llama3.3:70b', hint: 'General intelligence' },
           { value: 'mistral:latest', label: 'mistral:latest', hint: 'Lightweight & fast' },
@@ -44,7 +44,7 @@ export async function promptModelForProvider(
     if (selectedModel === '__custom__') {
       const customTag = await p.text({
         message: `Enter the Ollama model tag for ${entityName} (e.g. phi4:latest, codellama:latest):`,
-        placeholder: 'deepseek-r1:14b',
+        placeholder: 'deepseek-v4-flash',
         validate: (val) => (!val || val.trim().length === 0 ? 'Model tag cannot be empty.' : undefined),
       });
 
@@ -60,16 +60,18 @@ export async function promptModelForProvider(
 
   if (provider === 'gemini') {
     const geminiOptions = [
-      { value: 'gemini-2.0-flash', label: 'gemini-2.0-flash', hint: 'Recommended (Ultra-fast, massive throughput)' },
-      { value: 'gemini-1.5-pro', label: 'gemini-1.5-pro', hint: 'Deep reasoning & spatial system design' },
-      { value: 'gemini-1.5-flash', label: 'gemini-1.5-flash', hint: 'High-throughput lightweight tier' },
+      { value: 'gemini-3.7-flash', label: 'gemini-3.7-flash', hint: 'Recommended (Latest Aug 2026 workhorse, agentic reasoning)' },
+      { value: 'gemini-3.6-flash', label: 'gemini-3.6-flash', hint: 'High-throughput flash tier' },
+      { value: 'gemini-3.1-pro', label: 'gemini-3.1-pro', hint: 'Pro class flagship (2M token context window)' },
+      { value: 'gemini-3.5-flash', label: 'gemini-3.5-flash', hint: 'Sustained agentic runs' },
+      { value: 'gemini-2.5-flash', label: 'gemini-2.5-flash', hint: 'Cost-efficient production tier' },
       { value: '__custom__', label: 'Custom Gemini Model ID...', hint: 'Type custom model name' },
     ];
 
     const chosen = await p.select({
       message: `Select Gemini model for ${picocolors.bold(entityName)}:`,
       options: geminiOptions,
-      initialValue: 'gemini-2.0-flash',
+      initialValue: 'gemini-3.7-flash',
     });
 
     if (p.isCancel(chosen)) {
@@ -78,7 +80,7 @@ export async function promptModelForProvider(
     }
 
     if (chosen === '__custom__') {
-      const custom = await p.text({ message: 'Enter custom Gemini model ID:', placeholder: 'gemini-2.0-flash' });
+      const custom = await p.text({ message: 'Enter custom Gemini model ID:', placeholder: 'gemini-3.7-flash' });
       if (p.isCancel(custom)) process.exit(0);
       return custom.trim();
     }
@@ -87,17 +89,18 @@ export async function promptModelForProvider(
 
   if (provider === 'anthropic') {
     const claudeOptions = [
-      { value: 'claude-3-7-sonnet-20250219', label: 'claude-3-7-sonnet-20250219', hint: 'Recommended (Frontier reasoning + hybrid thinking)' },
-      { value: 'claude-3-5-sonnet-20241022', label: 'claude-3-5-sonnet-20241022', hint: 'High-precision architecture' },
-      { value: 'claude-3-5-haiku-20241022', label: 'claude-3-5-haiku-20241022', hint: 'Fast filtering & validation' },
-      { value: 'claude-3-opus-20240229', label: 'claude-3-opus-20240229', hint: 'Heavy reasoning & analysis' },
+      { value: 'claude-sonnet-5', label: 'claude-sonnet-5', hint: 'Recommended (Latest production workhorse, tool use & planning)' },
+      { value: 'claude-opus-5', label: 'claude-opus-5', hint: 'Flagship for complex agentic coding & enterprise' },
+      { value: 'claude-fable-5', label: 'claude-fable-5', hint: 'Mythos-class deepest reasoning & research' },
+      { value: 'claude-haiku-4-5', label: 'claude-haiku-4-5', hint: 'High-volume low-latency execution' },
+      { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6', hint: 'High-precision architecture tier' },
       { value: '__custom__', label: 'Custom Claude Model ID...', hint: 'Type custom model name' },
     ];
 
     const chosen = await p.select({
       message: `Select Claude model for ${picocolors.bold(entityName)}:`,
       options: claudeOptions,
-      initialValue: 'claude-3-7-sonnet-20250219',
+      initialValue: 'claude-sonnet-5',
     });
 
     if (p.isCancel(chosen)) {
@@ -106,7 +109,7 @@ export async function promptModelForProvider(
     }
 
     if (chosen === '__custom__') {
-      const custom = await p.text({ message: 'Enter custom Claude model ID:', placeholder: 'claude-3-7-sonnet-20250219' });
+      const custom = await p.text({ message: 'Enter custom Claude model ID:', placeholder: 'claude-sonnet-5' });
       if (p.isCancel(custom)) process.exit(0);
       return custom.trim();
     }
@@ -115,17 +118,18 @@ export async function promptModelForProvider(
 
   if (provider === 'openai') {
     const openaiOptions = [
-      { value: 'gpt-4o', label: 'gpt-4o', hint: 'Recommended (Flagship intelligence & speed)' },
-      { value: 'o3-mini', label: 'o3-mini', hint: 'High-speed mathematical & code reasoning' },
-      { value: 'o1', label: 'o1', hint: 'Deep deliberative reasoning flagship' },
-      { value: 'gpt-4o-mini', label: 'gpt-4o-mini', hint: 'Affordable lightweight model' },
+      { value: 'gpt-5.6-sol', label: 'gpt-5.6-sol', hint: 'Recommended (Flagship reasoning & complex architecture)' },
+      { value: 'gpt-5.6-luna', label: 'gpt-5.6-luna', hint: 'High-speed, cost-sensitive workloads' },
+      { value: 'gpt-5.6-cyber', label: 'gpt-5.6-cyber', hint: 'Specialized security & code vulnerability auditing' },
+      { value: 'o3-mini', label: 'o3-mini', hint: 'High-speed mathematical & logic reasoning' },
+      { value: 'gpt-4o', label: 'gpt-4o', hint: 'Standard multimodal model' },
       { value: '__custom__', label: 'Custom OpenAI Model ID...', hint: 'Type custom model name' },
     ];
 
     const chosen = await p.select({
       message: `Select OpenAI model for ${picocolors.bold(entityName)}:`,
       options: openaiOptions,
-      initialValue: 'gpt-4o',
+      initialValue: 'gpt-5.6-sol',
     });
 
     if (p.isCancel(chosen)) {
@@ -134,7 +138,7 @@ export async function promptModelForProvider(
     }
 
     if (chosen === '__custom__') {
-      const custom = await p.text({ message: 'Enter custom OpenAI model ID:', placeholder: 'gpt-4o' });
+      const custom = await p.text({ message: 'Enter custom OpenAI model ID:', placeholder: 'gpt-5.6-sol' });
       if (p.isCancel(custom)) process.exit(0);
       return custom.trim();
     }
@@ -143,15 +147,16 @@ export async function promptModelForProvider(
 
   if (provider === 'deepseek') {
     const deepseekOptions = [
-      { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)', hint: 'Recommended (Deep chain-of-thought logic)' },
-      { value: 'deepseek-chat', label: 'deepseek-chat (V3)', hint: 'High-speed coding & conversational model' },
+      { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro', hint: 'Recommended (1.6T MoE flagship with thinking modes)' },
+      { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash', hint: 'High-efficiency fast reasoning tier' },
+      { value: 'deepseek-reasoner', label: 'deepseek-reasoner', hint: 'Chain-of-thought legacy tier' },
       { value: '__custom__', label: 'Custom DeepSeek Model ID...', hint: 'Type custom model name' },
     ];
 
     const chosen = await p.select({
       message: `Select DeepSeek model for ${picocolors.bold(entityName)}:`,
       options: deepseekOptions,
-      initialValue: 'deepseek-reasoner',
+      initialValue: 'deepseek-v4-pro',
     });
 
     if (p.isCancel(chosen)) {
@@ -160,7 +165,7 @@ export async function promptModelForProvider(
     }
 
     if (chosen === '__custom__') {
-      const custom = await p.text({ message: 'Enter custom DeepSeek model ID:', placeholder: 'deepseek-reasoner' });
+      const custom = await p.text({ message: 'Enter custom DeepSeek model ID:', placeholder: 'deepseek-v4-pro' });
       if (p.isCancel(custom)) process.exit(0);
       return custom.trim();
     }
@@ -187,7 +192,7 @@ export class ModelConfigWizard {
         {
           value: 'individual',
           label: 'Mix-and-Match: Individually select provider & model per persona',
-          hint: 'Elite setup (e.g. DeepSeek-R1 for Red-Team + Claude 3.7 for Architecture)',
+          hint: 'Elite setup (e.g. DeepSeek-V4-Pro for Red-Team + Claude Opus 5 for Architecture)',
         },
       ],
     });

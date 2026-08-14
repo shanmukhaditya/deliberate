@@ -7,7 +7,7 @@ export class DeepSeekProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(apiKey?: string, model = 'deepseek-reasoner') {
+  constructor(apiKey?: string, model = 'deepseek-v4-pro') {
     this.apiKey = apiKey || process.env.DEEPSEEK_API_KEY || '';
     this.defaultModel = model;
   }
@@ -23,6 +23,8 @@ export class DeepSeekProvider implements LLMProvider {
 
     const fallbackChain = [
       DeepSeekProvider.resolvedActiveModel || this.defaultModel,
+      'deepseek-v4-pro',
+      'deepseek-v4-flash',
       'deepseek-reasoner',
       'deepseek-chat',
     ];
@@ -99,7 +101,7 @@ export class OllamaProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(baseUrl = 'http://localhost:11434', model = 'deepseek-r1:14b') {
+  constructor(baseUrl = 'http://localhost:11434', model = 'deepseek-v4-flash') {
     this.baseUrl = baseUrl;
     this.defaultModel = model;
   }
@@ -133,15 +135,13 @@ export class OllamaProvider implements LLMProvider {
     const fallbackChain = [
       OllamaProvider.resolvedActiveModel || this.defaultModel,
       ...installed,
+      'deepseek-v4-flash',
+      'deepseek-v4-pro',
       'deepseek-r1:14b',
       'deepseek-r1:32b',
-      'deepseek-r1:70b',
       'qwen2.5-coder:32b',
-      'qwen2.5-coder:14b',
       'llama3.3:70b',
-      'llama3.3:latest',
       'mistral:latest',
-      'phi4:latest',
     ];
 
     const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
@@ -198,7 +198,7 @@ export class OllamaProvider implements LLMProvider {
     throw (
       lastError ||
       new Error(
-        `Ollama: None of the models [${modelsToTry.join(', ')}] are installed locally. Run 'ollama pull deepseek-r1:14b' to download one.`
+        `Ollama: None of the models [${modelsToTry.join(', ')}] are installed locally. Run 'ollama pull deepseek-v4-flash' to download one.`
       )
     );
   }

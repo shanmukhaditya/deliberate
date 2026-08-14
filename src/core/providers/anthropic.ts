@@ -7,7 +7,7 @@ export class AnthropicProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(apiKey?: string, model = 'claude-3-7-sonnet-20250219') {
+  constructor(apiKey?: string, model = 'claude-sonnet-5') {
     this.apiKey = apiKey || process.env.ANTHROPIC_API_KEY || '';
     this.defaultModel = model;
   }
@@ -31,10 +31,12 @@ export class AnthropicProvider implements LLMProvider {
 
     const fallbackChain = [
       AnthropicProvider.resolvedActiveModel || this.defaultModel,
-      'claude-3-7-sonnet-20250219',
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku-20241022',
-      'claude-3-opus-20240229',
+      'claude-sonnet-5',
+      'claude-opus-5',
+      'claude-fable-5',
+      'claude-haiku-4-5',
+      'claude-sonnet-4-6',
+      'claude-opus-4-8',
     ];
 
     const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
