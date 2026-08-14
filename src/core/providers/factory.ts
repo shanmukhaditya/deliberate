@@ -4,6 +4,7 @@ import { OpenAIProvider } from './openai.js';
 import { AnthropicProvider } from './anthropic.js';
 import { DeepSeekProvider, OllamaProvider } from './deepseek_ollama.js';
 import { MockProvider } from './mock.js';
+import picocolors from 'picocolors';
 
 export class ProviderFactory {
   static async create(preferredProvider?: string, model?: string): Promise<LLMProvider> {
@@ -43,13 +44,24 @@ export class ProviderFactory {
       return new DeepSeekProvider(process.env.DEEPSEEK_API_KEY, model || 'deepseek-reasoner');
     }
 
-    // Check if local Ollama is available
+    // Check if local Ollama is running on localhost:11434
     const localOllama = new OllamaProvider();
     if (await localOllama.isAvailable()) {
       return localOllama;
     }
 
-    // Default to deterministic MockProvider if no keys or local model are found
-    return new MockProvider();
+    // If no provider or keys found, throw a friendly actionable error instead of silent mock data
+    throw new Error(
+      `\n` +
+      picocolors.bold(picocolors.red('✖ No LLM API Key detected!\n\n')) +
+      picocolors.yellow('Please set one of the following environment variables:\n') +
+      `  ${picocolors.cyan('export GEMINI_API_KEY')}="your-key"       ${picocolors.dim('# Google Gemini (Fast & Affordable)')}\n` +
+      `  ${picocolors.cyan('export ANTHROPIC_API_KEY')}="your-key"    ${picocolors.dim('# Anthropic Claude 3.7 Sonnet')}\n` +
+      `  ${picocolors.cyan('export OPENAI_API_KEY')}="your-key"       ${picocolors.dim('# OpenAI GPT-4o / Codex')}\n` +
+      `  ${picocolors.cyan('export DEEPSEEK_API_KEY')}="your-key"     ${picocolors.dim('# DeepSeek Reasoner')}\n\n` +
+      picocolors.green('Or run completely free & offline with Ollama:\n') +
+      `  ${picocolors.dim('$')} ollama run deepseek-r1:14b\n\n` +
+      picocolors.dim('(To run deterministic tests without API keys, pass `--provider mock`)')
+    );
   }
 }

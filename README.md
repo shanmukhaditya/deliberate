@@ -10,9 +10,28 @@
 
 ---
 
+## 📖 Table of Contents
+- [🎯 The Problem: First-Token Greediness](#-the-problem-first-token-greediness)
+- [⚡ Quickstart in 30 Seconds](#-quickstart-in-30-seconds)
+- [🔑 How to Configure Your LLM Provider](#-how-to-configure-your-llm-provider)
+- [🛠️ Detailed How-To Guides](#️-detailed-how-to-guides)
+  - [1. Brainstorm a System Architecture](#1-how-to-brainstorm-a-system-architecture)
+  - [2. Red-Team Existing Source Code](#2-how-to-red-team-existing-source-code)
+  - [3. Summon Specific Council Personas](#3-how-to-summon-specific-council-personas)
+  - [4. Connect to Claude Code via MCP](#4-how-to-connect-to-claude-code-mcp)
+  - [5. Install into Google Antigravity](#5-how-to-install-into-google-antigravity)
+  - [6. Use in Cursor, Windsurf & GitHub Copilot](#6-how-to-use-in-cursor-windsurf--github-copilot)
+  - [7. Programmatic TypeScript & Python SDK](#7-how-to-use-the-programmatic-sdk)
+- [🧠 The 6 Adversarial Personas](#-the-6-adversarial-personas)
+- [🔬 The 5 Systematic Ideation Topologies](#-the-5-systematic-ideation-topologies)
+- [🔒 Privacy & Security FAQ](#-privacy--security-faq)
+- [📄 License](#-license)
+
+---
+
 ## 🎯 The Problem: "First-Token Greediness"
 
-When AI coding tools (Claude Code, Antigravity, Devin, Codex) tackle non-trivial architecture or migration tasks, they typically suffer from **First-Token Greediness**—immediately vomiting standard boilerplate on token #1 without exploring alternative paradigms, stress-testing edge cases, or weighing Pareto trade-offs.
+When AI coding agents (Claude Code, Antigravity, Devin, Codex) tackle non-trivial architecture or migration tasks, they typically suffer from **First-Token Greediness**—immediately generating standard boilerplate on token #1 without exploring alternative paradigms, stress-testing edge cases, or weighing Pareto trade-offs.
 
 **`Deliberate`** is a dedicated open-source deliberation library, CLI, and [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that injects systematic, high-order thinking into any AI coding workflow.
 
@@ -28,50 +47,120 @@ When AI coding tools (Claude Code, Antigravity, Devin, Codex) tackle non-trivial
 
 ---
 
-## ⚡ Installation & Agent Setup
+## ⚡ Quickstart in 30 Seconds
 
-You can install and use Deliberate in your favorite workflow:
+Export your preferred LLM key and run instantly with `npx`:
 
-### 1. Global CLI / NPX (Zero Setup)
 ```bash
-# Run instantly with npx
-npx deliberate-ai brainstorm "Design an ultra-low latency event streamer"
+# 1. Set your API key
+export GEMINI_API_KEY="your-gemini-key"      # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY
 
-# Or install globally
-npm install -g deliberate-ai
-deliberate brainstorm "Design an ultra-low latency event streamer"
+# 2. Run Deliberate Brainstorming
+npx deliberate-ai brainstorm "Real-time state sync for collaborative canvas with 10k users"
 ```
 
-### 2. Universal Skill & Rules Installer (1 Command)
-Automatically installs the skill and rules into your local AI coding tools:
+*(Or install globally: `npm install -g deliberate-ai`)*
+
+---
+
+## 🔑 How to Configure Your LLM Provider
+
+`Deliberate` natively connects directly to frontier LLMs or free local models:
+
+### 1. Cloud Providers
+| Provider | Environment Variable | Default Model | Flag Override |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini** | `export GEMINI_API_KEY="..."` | `gemini-2.5-flash` | `--provider gemini --model gemini-2.5-pro` |
+| **Anthropic Claude** | `export ANTHROPIC_API_KEY="..."` | `claude-3-7-sonnet-20250219` | `--provider anthropic` |
+| **OpenAI / Codex** | `export OPENAI_API_KEY="..."` | `gpt-4o` | `--provider openai --model o3-mini` |
+| **DeepSeek** | `export DEEPSEEK_API_KEY="..."` | `deepseek-reasoner` | `--provider deepseek` |
+
+### 2. Free & 100% Offline Local Models (Ollama)
+If you don't want to use API keys, start Ollama locally:
 ```bash
-npx deliberate-ai install
+ollama run deepseek-r1:14b
+# Deliberate auto-detects localhost:11434 with zero configuration!
+npx deliberate-ai brainstorm "Design an in-memory ring buffer" --provider ollama
 ```
-*(Or via curl without Node: `curl -fsSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/install.sh | bash`)*
 
-### 3. Tool-Specific Setup
+---
 
-#### 🤖 Claude Code / Claude Desktop
-Add `deliberate-ai` to Claude Code via MCP:
+## 🛠️ Detailed How-To Guides
+
+### 1. How to Brainstorm a System Architecture
+Use `brainstorm` when designing new features, services, or data pipelines:
+
+```bash
+# Standard Balanced Deliberation (Topologies + 6 Personas)
+npx deliberate-ai brainstorm "Multi-tenant auth engine with row-level security"
+
+# Deep Tree-of-Thoughts Exploration with hard constraints
+npx deliberate-ai brainstorm "Distributed cache with sub-ms p99 latency" \
+  --mode deep-explore \
+  --constraints "Zero external Redis daemons" "Memory bounded at 128MB"
+
+# Fast 10-Second Sanity Check
+npx deliberate-ai brainstorm "State management for offline-first React app" --mode flash
+```
+
+---
+
+### 2. How to Red-Team Existing Source Code
+Use `red-team` to find race conditions, security vulnerabilities, memory leaks, and missing invariants in an existing file:
+
+```bash
+npx deliberate-ai red-team ./src/billing/transfer.ts \
+  --goal "Ensure zero double-spending under concurrent API requests"
+```
+
+---
+
+### 3. How to Summon Specific Council Personas
+If you only want specific expert viewpoints (e.g. Security + Performance):
+
+```bash
+npx deliberate-ai council "Migrate SQLite to distributed Raft" \
+  --personas architect performance security
+```
+
+---
+
+### 4. How to Connect to Claude Code (MCP)
+Add `deliberate-ai` to Claude Code so Claude automatically deliberates before generating code:
+
 ```bash
 claude mcp add deliberate npx -y deliberate-ai mcp
 ```
 
-#### 🌌 Google Antigravity
-Install the skill into Antigravity:
+Now in Claude Code:
+> *"Claude, re-architect our WebSocket ingestion layer to handle 50,000 concurrent connections."*  
+Claude will automatically call `deliberate_brainstorm` and follow the synthesized Pareto blueprint!
+
+---
+
+### 5. How to Install into Google Antigravity
+Install the Deliberate skill into Antigravity with 1 command:
+
 ```bash
 mkdir -p ~/.gemini/antigravity/skills/deliberate
 curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > ~/.gemini/antigravity/skills/deliberate/SKILL.md
 ```
 
-#### 💻 Cursor & Windsurf
-Add the rules file to your project root:
+Now in Antigravity chat:
+> *"Use deliberate to brainstorm a zero-downtime database partitioning strategy."*
+
+---
+
+### 6. How to Use in Cursor, Windsurf & GitHub Copilot
+
+#### For Cursor / Windsurf:
+Drop the rules into your project:
 ```bash
 curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/cursor/.cursorrules > .cursorrules
 ```
 
-#### 🐙 GitHub Copilot & OpenAI Codex
-Add instructions to your repository:
+#### For GitHub Copilot & Codex:
+Add instructions to your repo:
 ```bash
 mkdir -p .github
 curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > .github/copilot-instructions.md
@@ -79,145 +168,74 @@ curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integ
 
 ---
 
-## 🚀 CLI Commands & Usage
+### 7. How to Use the Programmatic SDK
 
-```bash
-# Brainstorm a high-concurrency architecture
-npx deliberate brainstorm "Real-time state sync for collaborative canvas with 10k users"
-
-# Red-team a high-risk file for race conditions & leaks
-npx deliberate red-team ./src/core/router.ts
-
-# Directly summon the adversarial council
-npx deliberate council "Migrate SQLite to distributed Raft"
-```
-
-### 2. Connect to Claude Code, Antigravity & Cursor (MCP Server)
-
-Add `deliberate` as an MCP server in your AI tool configuration:
-
-```json
-{
-  "mcpServers": {
-    "deliberate": {
-      "command": "npx",
-      "args": ["-y", "deliberate", "mcp"]
-    }
-  }
-}
-```
-
-Now your AI assistant has native access to:
-- `deliberate_brainstorm`
-- `deliberate_red_team`
-- `deliberate_council_debate`
-
----
-
-## 🧠 The 6 Adversarial Council Personas
-
-Unlike polite chat models that agree with everything, `Deliberate` personas enforce strict, anti-sycophantic loss functions:
-
-| Persona | Title | Bias & Cognitive Duty |
-| :--- | :--- | :--- |
-| 🏛️ **The Principal Architect** | *Staff Systems Architect* | Demands modularity, decoupled boundaries, and long-term evolvability. |
-| 🥊 **The Ruthless Contrarian** | *Adversarial Red-Teamer* | Unforgivingly attacks the happy-path; hunts catastrophic edge cases & race conditions. |
-| ⚡ **The Performance Hacker** | *Systems Optimization Guru* | Obsessed with mechanical sympathy, zero-allocation data structures, and sub-millisecond p99. |
-| 💎 **The DX & Ergonomics Purist** | *API Designer* | Enforces the *"Rule of 3 Seconds"*; eliminates ceremony and boilerplate. |
-| 🛡️ **The Security Auditor** | *Zero-Trust Architect* | Audits trust boundaries, injection surfaces, privilege escalation, and memory safety. |
-| 🔨 **The Pragmatist** | *KISS & YAGNI Enforcer* | Cuts over-engineering; favors boring, proven primitives over distributed complexity. |
-
----
-
-## 🔬 Systematic Ideation Topologies
-
-`Deliberate` replaces vague prompting with formal inventive heuristics:
-
-1. **First-Principles Deconstruction**: Recursively strips framework assumptions down to raw I/O, bandwidth, and computational constraints.
-2. **Inversion (The Anti-Problem / Jacobi's Rule)**: Simulates worst-case catastrophic failure modes, then inverts every failure into a non-negotiable **Architectural Invariant**.
-3. **TRIZ Contradiction Resolution**: Eliminates inherent engineering trade-offs (e.g. Query Latency vs. Memory Footprint) using inventive principles.
-4. **SCAMPER Architectural Mutation**: Mutates designs through 7 operators (*Substitute, Combine, Adapt, Modify, Put to use, Eliminate, Reverse*).
-5. **Tree-of-Thoughts Pareto Exploration**: Generates 3-4 distinct architectural branches and computes Pareto scores across DX, Performance, Simplicity, and Security.
-
----
-
-## 💻 Programmatic SDK Usage
-
-### TypeScript / Node.js
+#### In TypeScript / Node.js:
 ```typescript
-import { deliberate } from 'deliberate';
+import { deliberate } from 'deliberate-ai';
 
-// 1. Deliberate on an architecture
 const result = await deliberate.brainstorm({
   goal: "Design high-throughput event streamer with zero external dependencies",
-  mode: "council", // 'flash' | 'council' | 'deep-explore'
-  constraints: ["p99 < 1ms", "Zero external broker daemons"]
+  mode: "council",
+  provider: "gemini", // or "anthropic", "openai", "deepseek", "ollama"
+  constraints: ["p99 < 1ms", "Bounded memory at 64MB"]
 });
 
 console.log("Winning Architecture:", result.blueprint.winningArchitecture.title);
 console.log("Hard Invariants:", result.blueprint.coreInvariants);
-console.log("Action Plan:", result.blueprint.implementationSteps);
+console.log("Implementation Steps:", result.blueprint.implementationSteps);
 ```
 
-### Python / OpenAI Codex
+#### In Python / OpenAI Codex:
 ```python
 from deliberate_codex import Deliberate
 
-# Run deliberation from any Python / Codex agent pipeline
-result = Deliberate.brainstorm("Design an in-memory lock-free ring buffer", mode="council")
+result = Deliberate.brainstorm(
+    goal="Design an in-memory lockless ring buffer",
+    mode="council",
+    provider="gemini"
+)
 print(result["stdout"])
 ```
 
 ---
 
-## 🔌 Supported LLM Backends
+## 🧠 The 6 Adversarial Personas
 
-`Deliberate` auto-detects environment keys with zero manual configuration:
-- **Google Gemini**: `export GEMINI_API_KEY="..."`
-- **Anthropic Claude**: `export ANTHROPIC_API_KEY="..."`
-- **OpenAI / Codex**: `export OPENAI_API_KEY="..."`
-- **DeepSeek**: `export DEEPSEEK_API_KEY="..."`
-- **Local & Offline (Ollama / vLLM)**: Auto-connects to `http://localhost:11434`
-- **Offline Mock Engine**: Runs instant deterministic testing with `--provider mock`.
+Unlike polite chat models that agree with everything, `Deliberate` personas enforce strict, anti-sycophantic loss functions:
 
----
-
-## 📂 Repository Structure
-
-```
-deliberate/
-├── src/
-│   ├── core/
-│   │   ├── engine.ts          # Orchestrator for council debates & topologies
-│   │   ├── personas/          # The 6 adversarial personas & prompt builders
-│   │   ├── topologies/        # First-Principles, Inversion, TRIZ, SCAMPER, ToT
-│   │   ├── providers/         # Gemini, Anthropic, OpenAI, DeepSeek, Ollama, Mock
-│   │   ├── synthesizer.ts     # Pareto trade-off matrix & blueprint synthesis
-│   │   └── types.ts           # Domain models & Zod schemas
-│   ├── mcp/
-│   │   └── server.js          # Model Context Protocol server (stdio/SSE)
-│   ├── cli/
-│   │   ├── index.ts           # CLI binary (`deliberate brainstorm / red-team`)
-│   │   └── tui.ts             # Rich terminal boxes, tables, and spinners
-│   └── index.ts               # Public SDK exports
-├── integrations/
-│   ├── antigravity/SKILL.md   # Google Antigravity custom skill
-│   ├── codex/                 # OpenAI Function Calling schemas & Python helper
-│   ├── claude/                # Claude Code & Desktop MCP config
-│   └── cursor/.cursorrules    # Cursor IDE rules
-├── examples/                  # Executable TypeScript SDK examples
-└── tests/                     # Vitest automated test suite
-```
+| Persona | Title | Stance & Cognitive Duty |
+| :--- | :--- | :--- |
+| 🏛️ **The Principal Architect** | *Staff Systems Architect* | Demands modularity, clean domain boundaries, and long-term evolvability. |
+| 🥊 **The Ruthless Contrarian** | *Adversarial Red-Teamer* | Unforgivingly attacks the happy-path; hunts catastrophic edge cases & race conditions. |
+| ⚡ **The Performance Hacker** | *Systems Optimization Guru* | Obsessed with mechanical sympathy, zero-allocation data structures, and sub-millisecond p99. |
+| 💎 **The DX & Ergonomics Purist** | *API Designer* | Enforces the *"Rule of 3 Seconds"*; eliminates ceremony, cognitive load, and boilerplate. |
+| 🛡️ **The Security Auditor** | *Zero-Trust Architect* | Audits trust boundaries, injection surfaces, privilege escalation, and memory safety. |
+| 🔨 **The Pragmatist** | *KISS & YAGNI Enforcer* | Cuts over-engineering; favors boring, proven primitives over distributed complexity. |
 
 ---
 
-## 🧪 Testing
+## 🔬 The 5 Systematic Ideation Topologies
 
-```bash
-npm test
-```
+`Deliberate` replaces vague prompting with formal inventive heuristics:
+
+1. **First-Principles Deconstruction**: Strips framework assumptions down to raw I/O, memory bandwidth, and computational constraints.
+2. **Inversion (The Anti-Problem / Jacobi's Rule)**: Simulates worst-case catastrophic failure modes, then inverts every failure into a non-negotiable **Architectural Invariant**.
+3. **TRIZ Contradiction Resolution**: Eliminates inherent engineering trade-offs (e.g. Query Latency vs. Memory Overhead) using inventive principles.
+4. **SCAMPER Architectural Mutation**: Mutates designs through 7 operators (*Substitute, Combine, Adapt, Modify, Put to use, Eliminate, Reverse*).
+5. **Tree-of-Thoughts Pareto Exploration**: Generates 3-4 distinct architectural branches and computes Pareto scores across DX, Performance, Simplicity, and Security.
+
+---
+
+## 🔒 Privacy & Security FAQ
+
+#### Where do my prompts and code go?
+Prompts go **directly and only to your chosen LLM provider** (Google, Anthropic, OpenAI, DeepSeek) over encrypted HTTPS using your own API key. If you use Ollama, **zero data leaves your laptop**. There are no middleman servers, no proxy relays, and no telemetry.
+
+#### Can I use this without any API keys?
+**Yes!** Install [Ollama](https://ollama.com) and run `ollama run deepseek-r1:14b` (or `llama3.3`). Deliberate auto-detects local Ollama on `localhost:11434`.
 
 ---
 
 ## 📄 License
-MIT © [Deliberate Contributors](LICENSE)
+MIT © [Shanmukh Aditya](LICENSE)
