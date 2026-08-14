@@ -7,7 +7,7 @@ export class DeepSeekProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(apiKey?: string, model = 'deepseek-r2') {
+  constructor(apiKey?: string, model = 'deepseek-reasoner') {
     this.apiKey = apiKey || process.env.DEEPSEEK_API_KEY || '';
     this.defaultModel = model;
   }
@@ -23,9 +23,7 @@ export class DeepSeekProvider implements LLMProvider {
 
     const fallbackChain = [
       DeepSeekProvider.resolvedActiveModel || this.defaultModel,
-      'deepseek-r2',
       'deepseek-reasoner',
-      'deepseek-v3',
       'deepseek-chat',
     ];
 
@@ -101,7 +99,7 @@ export class OllamaProvider implements LLMProvider {
   private defaultModel: string;
   private static resolvedActiveModel: string | null = null;
 
-  constructor(baseUrl = 'http://localhost:11434', model = 'deepseek-r2') {
+  constructor(baseUrl = 'http://localhost:11434', model = 'deepseek-r1:14b') {
     this.baseUrl = baseUrl;
     this.defaultModel = model;
   }
@@ -135,14 +133,15 @@ export class OllamaProvider implements LLMProvider {
     const fallbackChain = [
       OllamaProvider.resolvedActiveModel || this.defaultModel,
       ...installed,
-      'deepseek-r2',
       'deepseek-r1:14b',
       'deepseek-r1:32b',
-      'qwen3:32b',
+      'deepseek-r1:70b',
       'qwen2.5-coder:32b',
-      'llama4:latest',
+      'qwen2.5-coder:14b',
+      'llama3.3:70b',
       'llama3.3:latest',
       'mistral:latest',
+      'phi4:latest',
     ];
 
     const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
@@ -199,7 +198,7 @@ export class OllamaProvider implements LLMProvider {
     throw (
       lastError ||
       new Error(
-        `Ollama: None of the models [${modelsToTry.join(', ')}] are installed locally. Run 'ollama pull deepseek-r2' to download one.`
+        `Ollama: None of the models [${modelsToTry.join(', ')}] are installed locally. Run 'ollama pull deepseek-r1:14b' to download one.`
       )
     );
   }

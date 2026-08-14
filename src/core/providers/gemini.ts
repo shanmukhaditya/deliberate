@@ -10,7 +10,7 @@ export class GeminiProvider implements LLMProvider {
 
   constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || '';
-    this.defaultModel = model || 'gemini-3.6-flash';
+    this.defaultModel = model || 'gemini-2.0-flash';
   }
 
   async isAvailable(): Promise<boolean> {
@@ -40,15 +40,12 @@ export class GeminiProvider implements LLMProvider {
         .filter((name) => !name.includes('embedding') && !name.includes('aqa'));
 
       if (validModels.length > 0) {
-        // Sort prioritizing 3.6, 3.5, 3.0, 2.5, 2.0
+        // Prioritize newest generation & high intelligence
         validModels.sort((a, b) => {
           const getScore = (s: string) => {
-            if (s.includes('3.6')) return 100;
-            if (s.includes('3.5')) return 90;
-            if (s.includes('3.0') || s.includes('3-')) return 80;
-            if (s.includes('2.5-pro')) return 70;
-            if (s.includes('2.5-flash')) return 60;
-            if (s.includes('2.0')) return 50;
+            if (s.includes('2.0-flash')) return 100;
+            if (s.includes('1.5-pro')) return 90;
+            if (s.includes('1.5-flash')) return 80;
             return 10;
           };
           return getScore(b) - getScore(a);
@@ -81,11 +78,6 @@ export class GeminiProvider implements LLMProvider {
       GeminiProvider.resolvedActiveModel,
       this.defaultModel,
       ...liveModels,
-      'gemini-3.6-flash',
-      'gemini-3.5-pro',
-      'gemini-3-flash',
-      'gemini-2.5-pro',
-      'gemini-2.5-flash',
       'gemini-2.0-flash',
       'gemini-1.5-flash',
       'gemini-1.5-pro',
