@@ -28,9 +28,44 @@ When AI coding tools (Claude Code, Antigravity, Devin, Codex) tackle non-trivial
 
 ---
 
-## 🚀 Quickstart
+## ⚡ 1-Minute Skill Installation for AI Coding Tools
 
-### 1. Instant Terminal CLI (Zero Install)
+Users can install Deliberate into their coding agents with a single command:
+
+### Universal CLI Installer
+```bash
+# Auto-detects and installs for Antigravity, Cursor, Windsurf, and Copilot
+npx deliberate install
+```
+
+### Or via `curl`
+```bash
+curl -fsSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/install.sh | bash
+```
+
+### Or Tool-by-Tool:
+* **Claude Code**:
+  ```bash
+  claude mcp add deliberate npx -y deliberate mcp
+  ```
+* **Google Antigravity**:
+  ```bash
+  mkdir -p ~/.gemini/antigravity/skills/deliberate
+  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > ~/.gemini/antigravity/skills/deliberate/SKILL.md
+  ```
+* **Cursor / Windsurf**:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/cursor/.cursorrules > .cursorrules
+  ```
+* **GitHub Copilot / Codex**:
+  ```bash
+  mkdir -p .github
+  curl -sSL https://raw.githubusercontent.com/shanmukhaditya/deliberate/main/integrations/antigravity/SKILL.md > .github/copilot-instructions.md
+  ```
+
+---
+
+## 🚀 Quickstart Usage
 
 ```bash
 # Brainstorm a high-concurrency architecture

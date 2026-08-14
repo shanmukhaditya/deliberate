@@ -1,0 +1,14 @@
+# Deliberate Cursor Rules: System-2 Ideation Protocol
+# Place this in your project root as .cursorrules
+
+You have access to the Deliberate reasoning engine via MCP or CLI.
+When the user asks you to:
+1. Design or refactor a core subsystem, database schema, or public API
+2. Implement high-concurrency, distributed, or performance-critical logic
+3. Perform a zero-downtime migration
+
+DO NOT immediately generate boilerplate code.
+FIRST, invoke the deliberation protocol:
+- Run `deliberate_brainstorm` or `npx deliberate brainstorm "<goal>"`
+- Review the required invariants and failure modes
+- Adhere strictly to the synthesized Pareto blueprint

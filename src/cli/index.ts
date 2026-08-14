@@ -160,6 +160,75 @@ program
     }
   });
 
+// Install Command for Agent Skills & Rules
+program
+  .command('install')
+  .description('Install Deliberate skill and rules into Antigravity, Claude Code, Cursor, and Copilot')
+  .option('--antigravity', 'Install Antigravity skill')
+  .option('--cursor', 'Install Cursor rules')
+  .option('--copilot', 'Install GitHub Copilot instructions')
+  .option('--all', 'Install into all supported tools', true)
+  .action(async (options) => {
+    DeliberateTui.printBanner();
+    console.log(picocolors.bold(picocolors.cyan('\n⚡ Installing Deliberate Integrations:\n')));
+
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    const cliDir = path.dirname(new URL(import.meta.url).pathname);
+    // Find project root (either 1 level up from src or 2 levels up from dist/cli)
+    const rootDir = cliDir.endsWith('dist/cli')
+      ? path.resolve(cliDir, '../..')
+      : cliDir.endsWith('src/cli')
+        ? path.resolve(cliDir, '../..')
+        : path.resolve(cliDir, '..');
+
+    // 1. Antigravity Skill
+    if (options.all || options.antigravity) {
+      const antigravitySkillDir = path.join(homeDir, '.gemini/antigravity/skills/deliberate');
+      try {
+        await fs.mkdir(antigravitySkillDir, { recursive: true });
+        const skillContent = await fs.readFile(
+          path.join(rootDir, 'integrations/antigravity/SKILL.md'),
+          'utf-8'
+        );
+        await fs.writeFile(path.join(antigravitySkillDir, 'SKILL.md'), skillContent);
+        console.log(picocolors.green('  ✔ Google Antigravity Skill installed: ') + picocolors.dim(path.join(antigravitySkillDir, 'SKILL.md')));
+      } catch (err: unknown) {
+        console.log(picocolors.yellow('  ⚠ Could not auto-install Antigravity skill (permission or directory skipped).'));
+      }
+    }
+
+    // 2. Cursor Rules
+    if (options.all || options.cursor) {
+      try {
+        const cursorContent = await fs.readFile(
+          path.join(rootDir, 'integrations/cursor/.cursorrules'),
+          'utf-8'
+        );
+        await fs.writeFile(path.resolve(process.cwd(), '.cursorrules'), cursorContent);
+        console.log(picocolors.green('  ✔ Cursor / Windsurf rules created: ') + picocolors.dim('./.cursorrules'));
+      } catch {
+        // ignore
+      }
+    }
+
+    // 3. GitHub Copilot Instructions
+    if (options.all || options.copilot) {
+      try {
+        await fs.mkdir(path.resolve(process.cwd(), '.github'), { recursive: true });
+        const skillContent = await fs.readFile(
+          path.join(rootDir, 'integrations/antigravity/SKILL.md'),
+          'utf-8'
+        );
+        await fs.writeFile(path.resolve(process.cwd(), '.github/copilot-instructions.md'), skillContent);
+        console.log(picocolors.green('  ✔ GitHub Copilot / Codex instructions created: ') + picocolors.dim('./.github/copilot-instructions.md'));
+      } catch {
+        // ignore
+      }
+    }
+
+    console.log(picocolors.bold(picocolors.cyan('\n🎉 Done! Your AI coding agents now have Deliberate System-2 reasoning active.\n')));
+  });
+
 // MCP Server Command
 program
   .command('mcp')
