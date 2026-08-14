@@ -5,6 +5,7 @@ export class AnthropicProvider implements LLMProvider {
   readonly name = 'Anthropic Claude';
   private apiKey: string;
   private defaultModel: string;
+  private static resolvedActiveModel: string | null = null;
 
   constructor(apiKey?: string, model = 'claude-3-7-sonnet-20250219') {
     this.apiKey = apiKey || process.env.ANTHROPIC_API_KEY || '';
@@ -28,44 +29,76 @@ export class AnthropicProvider implements LLMProvider {
         content: m.content,
       }));
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: this.defaultModel,
-        system: systemMessage || undefined,
-        messages: userMessages,
-        max_tokens: options.maxTokens ?? 4096,
-        temperature: options.temperature ?? 0.4,
-      }),
-    });
+    const fallbackChain = [
+      AnthropicProvider.resolvedActiveModel || this.defaultModel,
+      'claude-3-7-sonnet-20250219',
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+      'claude-3-opus-20240229',
+    ];
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Anthropic API error (${response.status}): ${err}`);
+    const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
+    let lastError: Error | null = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: modelName,
+            system: systemMessage || undefined,
+            messages: userMessages,
+            max_tokens: options.maxTokens ?? 4096,
+            temperature: options.temperature ?? 0.4,
+          }),
+        });
+
+        if (response.status === 404) {
+          continue;
+        }
+
+        if (!response.ok) {
+          const err = await response.text();
+          if (err.includes('not_found') || err.includes('model_not_found') || err.includes('404')) {
+            continue;
+          }
+          throw new Error(`Anthropic API error (${response.status}): ${err}`);
+        }
+
+        const data = (await response.json()) as {
+          content?: { type: string; text?: string }[];
+          usage?: { input_tokens: number; output_tokens: number };
+        };
+
+        const text = data.content?.[0]?.text || '';
+        const parsedJson = options.responseFormat === 'json' ? extractJsonFromResponse(text) : undefined;
+
+        AnthropicProvider.resolvedActiveModel = modelName;
+
+        return {
+          content: text,
+          parsedJson,
+          model: modelName,
+          usage: {
+            promptTokens: data.usage?.input_tokens ?? 0,
+            completionTokens: data.usage?.output_tokens ?? 0,
+            totalTokens: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
+          },
+        };
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (lastError.message.includes('not_found') || lastError.message.includes('404')) {
+          continue;
+        }
+        throw lastError;
+      }
     }
 
-    const data = (await response.json()) as {
-      content?: { type: string; text?: string }[];
-      usage?: { input_tokens: number; output_tokens: number };
-    };
-
-    const text = data.content?.[0]?.text || '';
-    const parsedJson = options.responseFormat === 'json' ? extractJsonFromResponse(text) : undefined;
-
-    return {
-      content: text,
-      parsedJson,
-      model: this.defaultModel,
-      usage: {
-        promptTokens: data.usage?.input_tokens ?? 0,
-        completionTokens: data.usage?.output_tokens ?? 0,
-        totalTokens: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
-      },
-    };
+    throw lastError || new Error(`Anthropic API: none of the models [${modelsToTry.join(', ')}] are accessible.`);
   }
 }

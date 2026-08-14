@@ -5,8 +5,9 @@ export class GeminiProvider implements LLMProvider {
   readonly name = 'Google Gemini';
   private apiKey: string;
   private defaultModel: string;
+  private static resolvedActiveModel: string | null = null;
 
-  constructor(apiKey?: string, model = 'gemini-1.5-flash') {
+  constructor(apiKey?: string, model = 'gemini-2.0-flash') {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || '';
     this.defaultModel = model;
   }
@@ -20,21 +21,21 @@ export class GeminiProvider implements LLMProvider {
       throw new Error('GEMINI_API_KEY is not set in environment or config.');
     }
 
-    // Format messages for Gemini API
     const contents = options.messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
 
-    const candidateModels = [
-      this.defaultModel,
-      'gemini-1.5-flash',
+    // Cascade of latest active models
+    const fallbackChain = [
+      GeminiProvider.resolvedActiveModel || this.defaultModel,
       'gemini-2.0-flash',
+      'gemini-1.5-flash',
       'gemini-1.5-pro',
+      'gemini-2.0-flash-lite',
     ];
 
-    // Remove duplicates while preserving order
-    const modelsToTry = Array.from(new Set(candidateModels));
+    const modelsToTry = Array.from(new Set(fallbackChain.filter(Boolean)));
     let lastError: Error | null = null;
 
     for (const modelName of modelsToTry) {
@@ -55,12 +56,15 @@ export class GeminiProvider implements LLMProvider {
         });
 
         if (response.status === 404) {
-          // Model name not found on this API key tier, try next fallback model
+          // Model deprecated or not found on this API key tier, try next
           continue;
         }
 
         if (!response.ok) {
           const errText = await response.text();
+          if (errText.includes('NOT_FOUND') || errText.includes('404') || errText.includes('no longer available')) {
+            continue;
+          }
           throw new Error(`Gemini API error (${response.status}): ${errText}`);
         }
 
@@ -71,6 +75,9 @@ export class GeminiProvider implements LLMProvider {
 
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         const parsedJson = options.responseFormat === 'json' ? extractJsonFromResponse(text) : undefined;
+
+        // Remember the working model for the rest of the session
+        GeminiProvider.resolvedActiveModel = modelName;
 
         return {
           content: text,
@@ -84,13 +91,13 @@ export class GeminiProvider implements LLMProvider {
         };
       } catch (err: unknown) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        if (lastError.message.includes('404')) {
+        if (lastError.message.includes('404') || lastError.message.includes('NOT_FOUND')) {
           continue;
         }
         throw lastError;
       }
     }
 
-    throw lastError || new Error(`Gemini API failed to find a valid active model among: ${modelsToTry.join(', ')}`);
+    throw lastError || new Error(`Gemini API: none of the models [${modelsToTry.join(', ')}] are accessible with your API key.`);
   }
 }
