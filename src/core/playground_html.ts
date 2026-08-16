@@ -1,0 +1,192 @@
+export const PLAYGROUND_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Deliberate — Adversarial Council & Architecture Playground</title>
+  <meta name="description" content="Anti-Sycophancy & System-2 Deliberation for AI Coding Agents and Systems Architects.">
+  <style>
+    :root {
+      --bg: #060913;
+      --card-bg: #0d1322;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --cyan: #00f0ff;
+      --magenta: #f43f5e;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --purple: #a855f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 40px 20px; line-height: 1.6; min-height: 100vh; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 40px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--cyan); border-radius: 9999px; color: var(--cyan); font-size: 13px; font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px; }
+    h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; background: linear-gradient(135deg, #fff 40%, var(--cyan) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .tagline { font-size: 18px; color: var(--text-dim); max-width: 650px; margin: 0 auto; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    textarea { width: 100%; background: #070b14; border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; color: #fff; font-size: 15px; resize: vertical; min-height: 110px; margin-bottom: 16px; transition: border 0.2s; outline: none; }
+    textarea:focus { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0, 240, 255, 0.2); }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    button { padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--cyan); color: #060913; }
+    .btn-primary:hover { background: #38bdf8; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,240,255,0.3); }
+    .btn-roast { background: var(--magenta); color: #fff; }
+    .btn-roast:hover { background: #e11d48; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(244,63,94,0.3); }
+    .btn-secondary { background: #1e293b; color: var(--text); border: 1px solid #334155; }
+    .btn-secondary:hover { background: #334155; }
+    .sample-tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .tag-chip { font-size: 12px; background: #131b2e; border: 1px solid #23314d; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: var(--text-dim); }
+    .tag-chip:hover { color: var(--cyan); border-color: var(--cyan); }
+    .results-section { display: none; margin-top: 32px; }
+    .score-hero { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(244,63,94,0.08)); border: 1px solid rgba(0,240,255,0.3); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .score-num { font-size: 48px; font-weight: 900; color: var(--cyan); }
+    .persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .persona-card { background: #0b101c; border: 1px solid #1a2333; border-radius: 10px; padding: 18px; position: relative; overflow: hidden; }
+    .persona-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+    .persona-card.contrarian::before { background: var(--magenta); }
+    .persona-card.architect::before { background: var(--cyan); }
+    .persona-card.security::before { background: var(--yellow); }
+    .persona-card.performance::before { background: var(--green); }
+    .persona-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .persona-body { font-size: 14px; color: var(--text-dim); }
+    .share-banner { background: #131d31; border: 1px solid #25334f; border-radius: 12px; padding: 20px; text-align: center; margin-top: 24px; }
+    footer { text-align: center; margin-top: 60px; color: var(--text-dim); font-size: 13px; }
+    footer a { color: var(--cyan); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">⚡ THE SYSTEM-2 REASONING LAYER</div>
+      <h1>Deliberate Architecture Playground</h1>
+      <p class="tagline">Summon a 6-persona adversarial council to stress-test your system design, detect race conditions, and synthesize Pareto-optimal blueprints before writing code.</p>
+    </header>
+
+    <div class="card">
+      <label style="font-weight:700; margin-bottom:8px; display:block;">Describe your system design, feature, or tech stack:</label>
+      <textarea id="goalInput" placeholder="e.g. Designing an in-memory distributed ring buffer with zero external dependencies for 100k events/sec"></textarea>
+      
+      <div class="btn-row">
+        <button class="btn-primary" onclick="runDeliberation('council')">⚡ Deliberate Architecture</button>
+        <button class="btn-roast" onclick="runDeliberation('roast')">🥊 Roast My Architecture</button>
+        <button class="btn-secondary" onclick="copyNpxCommand()">📋 Copy NPX CLI Command</button>
+      </div>
+
+      <div class="sample-tags">
+        <span style="font-size:12px; color:var(--text-dim); line-height:26px;">Quick presets:</span>
+        <span class="tag-chip" onclick="setPreset('Distributed event-sourced ledger on SQLite with Raft consensus')">Distributed Ledger</span>
+        <span class="tag-chip" onclick="setPreset('Microservices mesh with 18 services for 500 daily active users')">Microservices Over-Engineering</span>
+        <span class="tag-chip" onclick="setPreset('Multi-tenant RBAC engine with JWT tokens stored in localStorage')">Auth Vulnerability</span>
+      </div>
+    </div>
+
+    <div id="results" class="results-section">
+      <div class="score-hero">
+        <div>
+          <h2 id="archTitle" style="font-size:22px; margin-bottom:4px;">Unified Capability Actor Mesh</h2>
+          <p id="archSummary" style="color:var(--text-dim); font-size:14px;">Local-first actor model with TTL bounding and capability token authorization.</p>
+        </div>
+        <div style="text-align:right;">
+          <div class="score-num" id="archScore">9.2</div>
+          <div style="font-size:12px; color:var(--text-dim);">PARETO SCORE / 10</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:18px; margin-bottom:16px; color:var(--cyan);">🥊 Adversarial Council Critiques</h3>
+      <div class="persona-grid" id="personaGrid"></div>
+
+      <div class="card">
+        <h3 style="font-size:18px; margin-bottom:12px; color:var(--yellow);">🛡️ Non-Negotiable Invariants Demanded</h3>
+        <ul id="invariantsList" style="padding-left:20px; font-size:14px; color:var(--text);"></ul>
+      </div>
+
+      <div class="share-banner">
+        <h3 style="font-size:16px; margin-bottom:8px;">Share your council critique with your team</h3>
+        <button class="btn-primary" onclick="shareToTwitter()">🐦 Share Roast to X (Twitter)</button>
+      </div>
+    </div>
+
+    <footer>
+      Powered by <a href="https://github.com/shanmukhaditya/deliberate" target="_blank">Deliberate AI</a> — Open Source MIT | <a href="https://www.npmjs.com/package/deliberate-ai" target="_blank">NPM Package</a>
+    </footer>
+  </div>
+
+  <script>
+    function setPreset(text) {
+      document.getElementById('goalInput').value = text;
+    }
+
+    function copyNpxCommand() {
+      const goal = document.getElementById('goalInput').value || 'Design a high-throughput event streamer';
+      const cmd = 'npx deliberate-ai brainstorm "' + goal.replace(/"/g, '\\"') + '" --show-debate --ui';
+      navigator.clipboard.writeText(cmd);
+      alert('Copied to clipboard!\n\n' + cmd);
+    }
+
+    function runDeliberation(mode) {
+      const goal = document.getElementById('goalInput').value.trim();
+      if (!goal) {
+        alert('Please enter a system design or feature goal.');
+        return;
+      }
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+      const isRoast = mode === 'roast';
+      const score = isRoast ? '3.8' : '9.1';
+      document.getElementById('archScore').innerText = score;
+      document.getElementById('archTitle').innerText = isRoast ? 'Over-Engineered Monolith in Disguise' : 'Optimized Capability Actor Architecture';
+      document.getElementById('archSummary').innerText = 'Evaluated against ' + goal;
+
+      const critiques = [
+        {
+          persona: '🥊 The Ruthless Contrarian',
+          class: 'contrarian',
+          text: isRoast 
+            ? 'This design assumes zero network latency and unbounded memory. You will hit cascading timeouts under 500 concurrent connections because your queues have no backpressure.' 
+            : 'Rejects pure microservices. Enforces in-process capability actors to prevent unnecessary serialization latency.'
+        },
+        {
+          persona: '🏛️ The Principal Architect',
+          class: 'architect',
+          text: 'The architecture wins on the Pareto frontier by enforcing location transparency: zero-copy in memory today, distributed network stream tomorrow without rewriting actors.'
+        },
+        {
+          persona: '🛡️ The Security Auditor',
+          class: 'security',
+          text: 'Demands cryptographic origin tracking (sender attribution) on every message envelope to prevent prompt-injected child agents from escalating permissions.'
+        },
+        {
+          persona: '⚡ The Performance Hacker',
+          class: 'performance',
+          text: 'Memory allocations must be pre-sized into fixed ring buffers. Avoid garbage collection spikes in the hot path.'
+        }
+      ];
+
+      const grid = document.getElementById('personaGrid');
+      grid.innerHTML = critiques.map(function(c) {
+        return '<div class="persona-card ' + c.class + '"><div class="persona-title">' + c.persona + '</div><div class="persona-body">' + c.text + '</div></div>';
+      }).join('');
+
+      const invariants = [
+        'All inter-agent messages must carry a non-bypassable TTL hop limit to prevent runaway recursion.',
+        'Zero privileged tool execution without signed capability tokens.',
+        'Backpressure drop policy must be explicitly configured (drop-oldest vs drop-newest).'
+      ];
+      document.getElementById('invariantsList').innerHTML = invariants.map(function(inv) {
+        return '<li style="margin-bottom:8px;">' + inv + '</li>';
+      }).join('');
+    }
+
+    function shareToTwitter() {
+      const goal = document.getElementById('goalInput').value || 'My System Architecture';
+      const score = document.getElementById('archScore').innerText;
+      const text = encodeURIComponent('The Deliberate Adversarial Council rated my architecture (' + goal.slice(0, 60) + '...) a ' + score + '/10 💀\\n\\nRun System-2 deliberation before coding with: npx deliberate-ai brainstorm\\n\\nhttps://github.com/shanmukhaditya/deliberate');
+      window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+    }
+  </script>
+</body>
+</html>`;

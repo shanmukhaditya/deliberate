@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('1.0.1');
+  .version('1.0.2');
 
 // Brainstorm Command
 program
@@ -346,30 +346,13 @@ program
   .action(async (options) => {
     DeliberateTui.printBanner();
     const http = await import('http');
-    const { fileURLToPath } = await import('url');
-    const dirname = path.dirname(fileURLToPath(import.meta.url));
-    
-    // Find playground/index.html path
-    let htmlPath = path.resolve(process.cwd(), 'playground/index.html');
-    try {
-      await fs.access(htmlPath);
-    } catch {
-      htmlPath = path.resolve(dirname, '../../playground/index.html');
-    }
-
-    let htmlContent = '';
-    try {
-      htmlContent = await fs.readFile(htmlPath, 'utf-8');
-    } catch {
-      console.error(picocolors.red(`Error: Could not locate playground/index.html`));
-      process.exit(1);
-    }
+    const { PLAYGROUND_HTML } = await import('../core/playground_html.js');
 
     let port = parseInt(options.port, 10) || 3000;
     const startServer = () => {
       const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(htmlContent);
+        res.end(PLAYGROUND_HTML);
       });
 
       server.on('error', (err: any) => {
