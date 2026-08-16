@@ -338,6 +338,60 @@ program
     console.log(picocolors.dim('   Interactive Pareto Radar, Collapsible Debates & Code Scaffolds.\n   Press Ctrl+C to stop.\n'));
   });
 
+// Web Playground Command
+program
+  .command('playground')
+  .description('Launch the interactive Deliberate Web Playground & Architecture Roaster in your browser')
+  .option('-p, --port <port>', 'Port number to listen on', '3000')
+  .action(async (options) => {
+    DeliberateTui.printBanner();
+    const http = await import('http');
+    const { fileURLToPath } = await import('url');
+    const dirname = path.dirname(fileURLToPath(import.meta.url));
+    
+    // Find playground/index.html path
+    let htmlPath = path.resolve(process.cwd(), 'playground/index.html');
+    try {
+      await fs.access(htmlPath);
+    } catch {
+      htmlPath = path.resolve(dirname, '../../playground/index.html');
+    }
+
+    let htmlContent = '';
+    try {
+      htmlContent = await fs.readFile(htmlPath, 'utf-8');
+    } catch {
+      console.error(picocolors.red(`Error: Could not locate playground/index.html`));
+      process.exit(1);
+    }
+
+    let port = parseInt(options.port, 10) || 3000;
+    const startServer = () => {
+      const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(htmlContent);
+      });
+
+      server.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          port++;
+          startServer();
+        } else {
+          console.error(err);
+        }
+      });
+
+      server.listen(port, () => {
+        const url = `http://localhost:${port}`;
+        console.log(picocolors.bold(picocolors.green(`\n🎮 Deliberate Web Playground is LIVE at:`)));
+        console.log(`   ${picocolors.bold(picocolors.cyan(picocolors.underline(url)))}\n`);
+        console.log(picocolors.dim('   Roast My Architecture & Interactive Council.\n   Press Ctrl+C to stop.\n'));
+      });
+    };
+
+    startServer();
+  });
+
 // Multi-Provider Benchmark Command
 program
   .command('benchmark <goal>')
