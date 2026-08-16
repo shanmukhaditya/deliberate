@@ -6,22 +6,45 @@
 [![npm version](https://img.shields.io/npm/v/deliberate-ai?color=blue&style=flat-square)](https://www.npmjs.com/package/deliberate-ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-purple?style=flat-square)](https://modelcontextprotocol.io)
+[![Architecture Deliberated](https://img.shields.io/badge/Architecture-Deliberated-00f0ff?style=flat-square&logo=cpu)](https://github.com/shanmukhaditya/deliberate)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+
+---
+
+## 🚀 Quick Run in 15 Seconds (Zero Install)
+
+```bash
+# 1. Multi-round dialectical brainstorm with visual browser dashboard & ADR
+npx deliberate-ai brainstorm "Designing a lock-free distributed ring buffer" \
+  --rounds 2 \
+  --show-debate \
+  --adr ./docs/adr/ADR-001.md \
+  --ui
+
+# 2. Automated Git Pre-Push Protection Hook
+npx deliberate-ai hook install
+
+# 3. Pre-PR Git diff adversarial red-teaming
+npx deliberate-ai red-team --git --export ./audit-report.md
+
+# 4. Interactive council interview Q&A ("Grill Me" mode)
+npx deliberate-ai interview "Real-time collaborative canvas with 10k users"
+```
 
 ---
 
 ## 📖 Table of Contents
 - [🎯 The Problem: First-Token Greediness](#-the-problem-first-token-greediness)
-- [⚡ Quickstart in 30 Seconds](#-quickstart-in-30-seconds)
+- [⚡ 10 Superpowers of Deliberate v1.0.0](#-10-superpowers-of-deliberate-v100)
 - [🔑 How to Configure Your LLM Provider](#-how-to-configure-your-llm-provider)
 - [🛠️ Detailed How-To Guides](#️-detailed-how-to-guides)
   - [1. Brainstorm a System Architecture](#1-how-to-brainstorm-a-system-architecture)
-  - [2. Red-Team Existing Source Code](#2-how-to-red-team-existing-source-code)
-  - [3. Summon Specific Council Personas](#3-how-to-summon-specific-council-personas)
-  - [4. Connect to Claude Code via MCP](#4-how-to-connect-to-claude-code-mcp)
-  - [5. Install into Google Antigravity](#5-how-to-install-into-google-antigravity)
+  - [2. Red-Team Git Diffs & Pre-Push Hooks](#2-how-to-red-team-git-diffs--pre-push-hooks)
+  - [3. Generate Architectural Decision Records (ADR)](#3-how-to-generate-architectural-decision-records-adr)
+  - [4. View Interactive Web Dashboard](#4-how-to-view-interactive-web-dashboard)
+  - [5. Connect to Claude Code via MCP](#5-how-to-connect-to-claude-code-mcp)
   - [6. Use in Cursor, Windsurf & GitHub Copilot](#6-how-to-use-in-cursor-windsurf--github-copilot)
-  - [7. Programmatic TypeScript & Python SDK](#7-how-to-use-the-programmatic-sdk)
+  - [7. Automated Invariant Test Generation](#7-how-to-generate-invariant-tests)
 - [🧠 The 6 Adversarial Personas](#-the-6-adversarial-personas)
 - [🔬 The 5 Systematic Ideation Topologies](#-the-5-systematic-ideation-topologies)
 - [🔒 Privacy & Security FAQ](#-privacy--security-faq)
