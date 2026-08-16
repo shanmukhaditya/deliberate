@@ -7,6 +7,7 @@ import picocolors from 'picocolors';
 import { DeliberationEngine } from '../core/engine.js';
 import { DeliberateTui } from './tui.js';
 import { DeliberateMcpServer } from '../mcp/server.js';
+import { Synthesizer } from '../core/synthesizer.js';
 import { DeliberationMode, PersonaId } from '../core/types.js';
 
 const program = new Command();
@@ -14,7 +15,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.1.0');
+  .version('0.3.0');
 
 // Brainstorm Command
 program
@@ -24,20 +25,31 @@ program
   .option('-p, --provider <provider>', 'LLM provider: gemini, anthropic, openai, deepseek, ollama, mock')
   .option('--model <model>', 'Specific model identifier')
   .option('-i, --interactive', 'Interactively select models and personas before running')
+  .option('-v, --verbose', 'Show verbatim persona debates and attack vectors')
+  .option('--show-debate', 'Show verbatim persona debates and attack vectors')
+  .option('--export <filepath>', 'Export full architectural blueprint to file (Markdown or JSON)')
+  .option('--json', 'Output raw JSON to stdout (ideal for piping into agents)')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
   .action(async (goal: string, options) => {
-    DeliberateTui.printBanner();
+    const isJson = Boolean(options.json);
+    const showDebate = Boolean(options.verbose || options.showDebate);
 
-    if (options.interactive) {
+    if (!isJson) {
+      DeliberateTui.printBanner();
+    }
+
+    if (options.interactive && !isJson) {
       const { ModelConfigWizard } = await import('./wizard.js');
       await ModelConfigWizard.run();
     }
 
-    const spinner = ora({
-      text: picocolors.cyan('Initializing Deliberation Engine...'),
-      color: 'cyan',
-    }).start();
+    const spinner = isJson
+      ? null
+      : ora({
+          text: picocolors.cyan('Initializing Deliberation Engine...'),
+          color: 'cyan',
+        }).start();
 
     const engine = new DeliberationEngine();
 
@@ -53,19 +65,40 @@ program
         },
         {
           onStageStart: (stage, detail) => {
-            spinner.text = picocolors.cyan(`[${stage.toUpperCase()}] ${detail}`);
+            if (spinner) spinner.text = picocolors.cyan(`[${stage.toUpperCase()}] ${detail}`);
           },
           onItemComplete: (item) => {
-            spinner.succeed(picocolors.green(`Completed: ${item}`));
-            spinner.start(picocolors.cyan('Deliberating next phase...'));
+            if (spinner) {
+              spinner.succeed(picocolors.green(`Completed: ${item}`));
+              spinner.start(picocolors.cyan('Deliberating next phase...'));
+            }
           },
         }
       );
 
-      spinner.stop();
-      DeliberateTui.renderResult(result);
+      if (spinner) spinner.stop();
+
+      if (isJson) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        DeliberateTui.renderResult(result, showDebate);
+      }
+
+      // Handle file export if requested
+      if (options.export) {
+        const targetPath = path.resolve(process.cwd(), options.export);
+        const exportContent = targetPath.endsWith('.json')
+          ? JSON.stringify(result, null, 2)
+          : Synthesizer.exportToMarkdown(result);
+
+        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+        await fs.writeFile(targetPath, exportContent, 'utf-8');
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Blueprint successfully exported to ${picocolors.bold(targetPath)}\n`));
+        }
+      }
     } catch (err: unknown) {
-      spinner.fail(picocolors.red('Deliberation error occurred.'));
+      if (spinner) spinner.fail(picocolors.red('Deliberation error occurred.'));
       console.error(err);
       process.exit(1);
     }
@@ -77,8 +110,15 @@ program
   .description('Adversarially stress-test a target source file against concurrency, security, and scale failures')
   .option('-g, --goal <goal>', 'What the target code is trying to achieve', 'Stress-test code invariants')
   .option('-p, --provider <provider>', 'LLM provider')
+  .option('-v, --verbose', 'Show verbatim persona critiques')
+  .option('--show-debate', 'Show verbatim persona critiques')
+  .option('--export <filepath>', 'Export red-team audit report to file')
+  .option('--json', 'Output raw JSON')
   .action(async (targetFile: string, options) => {
-    DeliberateTui.printBanner();
+    const isJson = Boolean(options.json);
+    const showDebate = Boolean(options.verbose || options.showDebate);
+
+    if (!isJson) DeliberateTui.printBanner();
 
     const absPath = path.resolve(process.cwd(), targetFile);
     let content = '';
@@ -90,37 +130,46 @@ program
       process.exit(1);
     }
 
-    const spinner = ora({
-      text: picocolors.red(`Summoning Red-Team Council for ${targetFile}...`),
-      color: 'red',
-    }).start();
+    const spinner = isJson
+      ? null
+      : ora({
+          text: picocolors.red(`Summoning Red-Team Council for ${targetFile}...`),
+          color: 'red',
+        }).start();
 
     const engine = new DeliberationEngine();
 
     try {
-      const result = await engine.run(
-        {
-          goal: options.goal,
-          mode: 'red-team',
-          filePath: absPath,
-          fileContent: content,
-          provider: options.provider,
-        },
-        {
-          onStageStart: (_, detail) => {
-            spinner.text = picocolors.red(detail);
-          },
-          onItemComplete: (item) => {
-            spinner.succeed(picocolors.green(`Audited: ${item}`));
-            spinner.start(picocolors.red('Auditing next threat vector...'));
-          },
-        }
-      );
+      const result = await engine.run({
+        goal: options.goal,
+        mode: 'red-team',
+        provider: options.provider,
+        filePath: targetFile,
+        fileContent: content,
+      });
 
-      spinner.stop();
-      DeliberateTui.renderResult(result);
-    } catch (err) {
-      spinner.fail(picocolors.red('Red-team audit failed.'));
+      if (spinner) spinner.stop();
+
+      if (isJson) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        DeliberateTui.renderResult(result, showDebate);
+      }
+
+      if (options.export) {
+        const targetPath = path.resolve(process.cwd(), options.export);
+        const exportContent = targetPath.endsWith('.json')
+          ? JSON.stringify(result, null, 2)
+          : Synthesizer.exportToMarkdown(result);
+
+        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+        await fs.writeFile(targetPath, exportContent, 'utf-8');
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Red-team audit report exported to ${picocolors.bold(targetPath)}\n`));
+        }
+      }
+    } catch (err: unknown) {
+      if (spinner) spinner.fail(picocolors.red('Red-team deliberation failed.'));
       console.error(err);
       process.exit(1);
     }
@@ -129,38 +178,61 @@ program
 // Council Debate Command
 program
   .command('council <goal>')
-  .description('Directly summon the adversarial council to debate an architectural proposal')
-  .option('--personas <personas...>', 'Specific personas: architect, contrarian, performance, dx, security, pragmatist')
+  .description('Convene specific personas for targeted architectural debate')
+  .option(
+    '--personas <personas...>',
+    'Personas to summon: architect, contrarian, performance, dx, security, pragmatist'
+  )
   .option('-p, --provider <provider>', 'LLM provider')
+  .option('-v, --verbose', 'Show verbatim debates')
+  .option('--show-debate', 'Show verbatim debates')
+  .option('--export <filepath>', 'Export debate report to file')
+  .option('--json', 'Output raw JSON')
   .action(async (goal: string, options) => {
-    DeliberateTui.printBanner();
+    const isJson = Boolean(options.json);
+    const showDebate = Boolean(options.verbose || options.showDebate);
 
-    const spinner = ora({
-      text: picocolors.magenta('Summoning Adversarial Council...'),
-      color: 'magenta',
-    }).start();
+    if (!isJson) DeliberateTui.printBanner();
+
+    const spinner = isJson
+      ? null
+      : ora({
+          text: picocolors.magenta('Convening Adversarial Council...'),
+          color: 'magenta',
+        }).start();
 
     const engine = new DeliberationEngine();
 
     try {
-      const result = await engine.run(
-        {
-          goal,
-          mode: 'council',
-          personas: options.personas as PersonaId[],
-          provider: options.provider,
-        },
-        {
-          onStageStart: (_, detail) => {
-            spinner.text = picocolors.magenta(detail);
-          },
-        }
-      );
+      const result = await engine.run({
+        goal,
+        mode: 'council',
+        personas: options.personas as PersonaId[],
+        provider: options.provider,
+      });
 
-      spinner.stop();
-      DeliberateTui.renderResult(result);
-    } catch (err) {
-      spinner.fail(picocolors.red('Council debate failed.'));
+      if (spinner) spinner.stop();
+
+      if (isJson) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        DeliberateTui.renderResult(result, showDebate);
+      }
+
+      if (options.export) {
+        const targetPath = path.resolve(process.cwd(), options.export);
+        const exportContent = targetPath.endsWith('.json')
+          ? JSON.stringify(result, null, 2)
+          : Synthesizer.exportToMarkdown(result);
+
+        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+        await fs.writeFile(targetPath, exportContent, 'utf-8');
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Council report exported to ${picocolors.bold(targetPath)}\n`));
+        }
+      }
+    } catch (err: unknown) {
+      if (spinner) spinner.fail(picocolors.red('Council deliberation failed.'));
       console.error(err);
       process.exit(1);
     }
@@ -181,7 +253,7 @@ program
   .description('View or update configured models')
   .argument('[action]', 'Action: list | set | get', 'list')
   .argument('[provider]', 'Provider: gemini | anthropic | openai | deepseek | ollama')
-  .argument('[modelName]', 'Model identifier to set (e.g. gemini-2.0-flash, claude-3-7-sonnet)')
+  .argument('[modelName]', 'Model identifier to set (e.g. gemini-3.7-flash, claude-sonnet-5)')
   .option('-g, --global', 'Apply globally to ~/.deliberaterc', false)
   .action(async (action, provider, modelName, options) => {
     const { ConfigManager } = await import('../core/config.js');
@@ -205,7 +277,7 @@ program
 
     if (action === 'set') {
       if (!provider) {
-        console.error(picocolors.red('Error: Please specify a provider (e.g. deliberate model set gemini gemini-2.0-flash)'));
+        console.error(picocolors.red('Error: Please specify a provider (e.g. deliberate model set gemini gemini-3.7-flash)'));
         process.exit(1);
       }
 
@@ -223,79 +295,92 @@ program
 // Install Command for Agent Skills & Rules
 program
   .command('install')
-  .description('Install Deliberate skill and rules into Antigravity, Claude Code, Cursor, and Copilot')
-  .option('--antigravity', 'Install Antigravity skill')
-  .option('--cursor', 'Install Cursor rules')
-  .option('--copilot', 'Install GitHub Copilot instructions')
-  .option('--all', 'Install into all supported tools', true)
+  .description('Install Deliberate skills and rules into Antigravity, Claude, Codex, Cursor, and Windsurf')
+  .option('-t, --target <target>', 'Target agent: all, antigravity, claude, codex, cursor, windsurf', 'all')
   .action(async (options) => {
     DeliberateTui.printBanner();
-    console.log(picocolors.bold(picocolors.cyan('\n⚡ Installing Deliberate Integrations:\n')));
+    console.log(picocolors.bold(picocolors.cyan(`⚡ Installing Deliberate integration for target: ${options.target}...\n`)));
 
     const homeDir = process.env.HOME || process.env.USERPROFILE || '';
-    const cliDir = path.dirname(new URL(import.meta.url).pathname);
-    // Find project root (either 1 level up from src or 2 levels up from dist/cli)
-    const rootDir = cliDir.endsWith('dist/cli')
-      ? path.resolve(cliDir, '../..')
-      : cliDir.endsWith('src/cli')
-        ? path.resolve(cliDir, '../..')
-        : path.resolve(cliDir, '..');
+    const cwd = process.cwd();
 
-    // 1. Antigravity Skill
-    if (options.all || options.antigravity) {
-      const antigravitySkillDir = path.join(homeDir, '.gemini/antigravity/skills/deliberate');
+    // 1. Google Antigravity Skill Installation
+    if (options.target === 'all' || options.target === 'antigravity') {
+      const agySkillDir = path.join(homeDir, '.gemini', 'antigravity', 'skills', 'deliberate');
       try {
-        await fs.mkdir(antigravitySkillDir, { recursive: true });
-        const skillContent = await fs.readFile(
-          path.join(rootDir, 'integrations/antigravity/SKILL.md'),
-          'utf-8'
-        );
-        await fs.writeFile(path.join(antigravitySkillDir, 'SKILL.md'), skillContent);
-        console.log(picocolors.green('  ✔ Google Antigravity Skill installed: ') + picocolors.dim(path.join(antigravitySkillDir, 'SKILL.md')));
+        await fs.mkdir(agySkillDir, { recursive: true });
+        const skillContent = `---
+name: deliberate
+description: Systematic multi-agent ideation and adversarial deliberation council (TRIZ, Inversion, First-Principles, 6 Personas) for architecture design and code review.
+---
+
+# Deliberate Reasoning Engine
+
+Run multi-agent deliberation before implementing complex features:
+- \`npx deliberate-ai brainstorm "<goal>"\`
+- \`npx deliberate-ai red-team <filepath>\`
+`;
+        await fs.writeFile(path.join(agySkillDir, 'SKILL.md'), skillContent, 'utf-8');
+        console.log(picocolors.green(`✔ Google Antigravity skill installed to ${picocolors.bold(agySkillDir)}`));
       } catch (err: unknown) {
-        console.log(picocolors.yellow('  ⚠ Could not auto-install Antigravity skill (permission or directory skipped).'));
+        console.log(picocolors.yellow(`⚠ Could not write Antigravity skill: ${(err as Error).message}`));
       }
     }
 
-    // 2. Cursor Rules
-    if (options.all || options.cursor) {
+    // 2. Claude Desktop MCP Config
+    if (options.target === 'all' || options.target === 'claude') {
+      const claudeConfigDir = path.join(homeDir, 'Library', 'Application Support', 'Claude');
+      const claudeConfigFile = path.join(claudeConfigDir, 'claude_desktop_config.json');
       try {
-        const cursorContent = await fs.readFile(
-          path.join(rootDir, 'integrations/cursor/.cursorrules'),
-          'utf-8'
-        );
-        await fs.writeFile(path.resolve(process.cwd(), '.cursorrules'), cursorContent);
-        console.log(picocolors.green('  ✔ Cursor / Windsurf rules created: ') + picocolors.dim('./.cursorrules'));
-      } catch {
-        // ignore
+        await fs.mkdir(claudeConfigDir, { recursive: true });
+        let existingConfig: any = {};
+        try {
+          const raw = await fs.readFile(claudeConfigFile, 'utf-8');
+          existingConfig = JSON.parse(raw);
+        } catch {
+          existingConfig = {};
+        }
+
+        existingConfig.mcpServers = existingConfig.mcpServers || {};
+        existingConfig.mcpServers['deliberate'] = {
+          command: 'npx',
+          args: ['-y', 'deliberate-ai', 'mcp'],
+        };
+
+        await fs.writeFile(claudeConfigFile, JSON.stringify(existingConfig, null, 2), 'utf-8');
+        console.log(picocolors.green(`✔ Claude Code / Desktop MCP server configured in ${picocolors.bold(claudeConfigFile)}`));
+      } catch (err: unknown) {
+        console.log(picocolors.yellow(`⚠ Could not write Claude config: ${(err as Error).message}`));
       }
     }
 
-    // 3. GitHub Copilot Instructions
-    if (options.all || options.copilot) {
+    // 3. Cursor & Windsurf Rules
+    if (options.target === 'all' || options.target === 'cursor' || options.target === 'windsurf') {
+      const cursorRulesPath = path.join(cwd, '.cursorrules');
+      const rulesContent = `# Deliberate Reasoning Engine Rules
+Before generating complex architectural systems or refactors, invoke Deliberate:
+- Run: npx deliberate-ai brainstorm "<feature_goal>"
+- Run: npx deliberate-ai red-team <file_path>
+- Invariants generated by Deliberate must be treated as non-negotiable hard constraints.
+`;
       try {
-        await fs.mkdir(path.resolve(process.cwd(), '.github'), { recursive: true });
-        const skillContent = await fs.readFile(
-          path.join(rootDir, 'integrations/antigravity/SKILL.md'),
-          'utf-8'
-        );
-        await fs.writeFile(path.resolve(process.cwd(), '.github/copilot-instructions.md'), skillContent);
-        console.log(picocolors.green('  ✔ GitHub Copilot / Codex instructions created: ') + picocolors.dim('./.github/copilot-instructions.md'));
-      } catch {
-        // ignore
+        await fs.writeFile(cursorRulesPath, rulesContent, 'utf-8');
+        console.log(picocolors.green(`✔ .cursorrules added to current project (${picocolors.bold(cursorRulesPath)})`));
+      } catch (err: unknown) {
+        console.log(picocolors.yellow(`⚠ Could not write .cursorrules: ${(err as Error).message}`));
       }
     }
 
-    console.log(picocolors.bold(picocolors.cyan('\n🎉 Done! Your AI coding agents now have Deliberate System-2 reasoning active.\n')));
+    console.log(picocolors.bold(picocolors.green('\n🎉 Deliberate is fully installed and ready across your AI coding agent toolchain!')));
   });
 
 // MCP Server Command
 program
   .command('mcp')
-  .description('Start the Model Context Protocol (MCP) server on stdio for Claude Code, Antigravity, and Cursor')
+  .description('Start Model Context Protocol (MCP) server for Claude Code, Antigravity, and Cursor')
   .action(async () => {
     const server = new DeliberateMcpServer();
-    await server.startStdio();
+    await server.start();
   });
 
 program.parse(process.argv);

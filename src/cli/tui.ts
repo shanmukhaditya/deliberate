@@ -1,7 +1,7 @@
 import picocolors from 'picocolors';
 import boxen from 'boxen';
 import Table from 'cli-table3';
-import { DeliberationResult } from '../core/types.js';
+import { DeliberationResult, PersonaCritique } from '../core/types.js';
 
 export class DeliberateTui {
   static printBanner() {
@@ -20,7 +20,52 @@ export class DeliberateTui {
     );
   }
 
-  static renderResult(result: DeliberationResult) {
+  static renderDebates(debates: PersonaCritique[]) {
+    console.log('\n' + picocolors.bold(picocolors.magenta('🥊 ADVERSARIAL COUNCIL DEBATES & CRITIQUES:\n')));
+
+    const personaIcons: Record<string, string> = {
+      architect: '🏛️',
+      contrarian: '🥊',
+      performance: '⚡',
+      dx: '💎',
+      security: '🛡️',
+      pragmatist: '🔨',
+    };
+
+    for (const critique of debates) {
+      const icon = personaIcons[critique.personaId] || '👤';
+      const cardContent = `
+${picocolors.bold(picocolors.yellow('CORE CRITIQUE:'))} ${critique.coreCritique}
+
+${picocolors.bold(picocolors.green('STRENGTHS IDENTIFIED:'))}
+${critique.strengths.map((s) => `  ${picocolors.green('✔')} ${s}`).join('\n')}
+
+${picocolors.bold(picocolors.red('ATTACK VECTORS & VULNERABILITIES:'))}
+${critique.vulnerabilities.map((v) => `  ${picocolors.red('✖')} ${v}`).join('\n')}
+
+${picocolors.bold(picocolors.cyan('REQUIRED INVARIANTS:'))}
+${critique.requiredInvariants.map((inv) => `  ${picocolors.cyan('•')} ${inv}`).join('\n')}
+${critique.proposedAlternative ? `\n${picocolors.bold(picocolors.magenta('COUNTER-PROPOSAL:'))} ${critique.proposedAlternative}` : ''}
+`.trim();
+
+      console.log(
+        boxen(cardContent, {
+          padding: 1,
+          margin: { top: 0, bottom: 1, left: 0, right: 0 },
+          borderStyle: 'round',
+          borderColor: critique.personaId === 'contrarian' ? 'red' : critique.personaId === 'security' ? 'yellow' : 'cyan',
+          title: ` ${icon} ${critique.personaName} `,
+          titleAlignment: 'left',
+        })
+      );
+    }
+  }
+
+  static renderResult(result: DeliberationResult, showDebate = false) {
+    if (showDebate && result.councilDebates && result.councilDebates.length > 0) {
+      this.renderDebates(result.councilDebates);
+    }
+
     const bp = result.blueprint;
     const win = bp.winningArchitecture;
 
@@ -102,13 +147,12 @@ ${picocolors.white(bp.executiveSummary)}
       console.log(`  ${picocolors.green('✔')} ${step}`);
     });
 
-    // 7. Code Skeleton (if present)
+    // 7. Architectural Code Skeleton
     if (bp.codeSkeleton) {
       console.log('\n' + picocolors.bold(picocolors.cyan('💻 ARCHITECTURAL CODE SKELETON:')));
       console.log(
         boxen(bp.codeSkeleton, {
           padding: 1,
-          margin: 0,
           borderStyle: 'single',
           borderColor: 'gray',
         })

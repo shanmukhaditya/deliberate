@@ -6,6 +6,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { DeliberationEngine } from '../core/engine.js';
+import { Synthesizer } from '../core/synthesizer.js';
 import { DeliberationMode, PersonaId } from '../core/types.js';
 
 export class DeliberateMcpServer {
@@ -17,7 +18,7 @@ export class DeliberateMcpServer {
     this.server = new Server(
       {
         name: 'deliberate-mcp-server',
-        version: '0.1.0',
+        version: '0.3.0',
       },
       {
         capabilities: {
@@ -58,6 +59,10 @@ export class DeliberateMcpServer {
                 items: { type: 'string' },
                 description: 'Hard engineering constraints (e.g., zero external dependencies, p99 < 5ms).',
               },
+              asMarkdown: {
+                type: 'boolean',
+                description: 'If true, returns the blueprint as formatted Markdown instead of raw JSON.',
+              },
             },
             required: ['goal'],
           },
@@ -81,6 +86,10 @@ export class DeliberateMcpServer {
                 type: 'string',
                 description: 'The actual source code to red-team.',
               },
+              asMarkdown: {
+                type: 'boolean',
+                description: 'If true, returns the red-team report as Markdown.',
+              },
             },
             required: ['goal', 'fileContent'],
           },
@@ -102,7 +111,11 @@ export class DeliberateMcpServer {
                   type: 'string',
                   enum: ['architect', 'contrarian', 'performance', 'dx', 'security', 'pragmatist'],
                 },
-                description: 'Specific personas to summon (defaults to all).',
+                description: 'Specific council members to summon.',
+              },
+              context: {
+                type: 'string',
+                description: 'Relevant background.',
               },
             },
             required: ['goal'],
@@ -123,8 +136,9 @@ export class DeliberateMcpServer {
           const mode = (args?.mode as DeliberationMode) || 'council';
           const context = args?.context ? String(args.context) : undefined;
           const constraints = Array.isArray(args?.constraints)
-            ? args.constraints.map(String)
+            ? (args.constraints as string[])
             : undefined;
+          const asMarkdown = Boolean(args?.asMarkdown);
 
           const result = await this.engine.run({
             goal,
@@ -133,24 +147,15 @@ export class DeliberateMcpServer {
             constraints,
           });
 
+          const contentText = asMarkdown
+            ? Synthesizer.exportToMarkdown(result)
+            : JSON.stringify(result, null, 2);
+
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(
-                  {
-                    status: 'success',
-                    winning_architecture: result.blueprint.winningArchitecture,
-                    rejected_alternatives: result.blueprint.rejectedAlternatives,
-                    core_invariants: result.blueprint.coreInvariants,
-                    failure_modes_and_mitigations: result.blueprint.failureModesAndMitigations,
-                    implementation_steps: result.blueprint.implementationSteps,
-                    code_skeleton: result.blueprint.codeSkeleton,
-                    execution_time_ms: result.executionTimeMs,
-                  },
-                  null,
-                  2
-                ),
+                text: contentText,
               },
             ],
           };
@@ -158,8 +163,9 @@ export class DeliberateMcpServer {
 
         if (name === 'deliberate_red_team') {
           const goal = String(args?.goal || '');
-          const filePath = args?.filePath ? String(args.filePath) : undefined;
+          const filePath = String(args?.filePath || 'source_file.ts');
           const fileContent = String(args?.fileContent || '');
+          const asMarkdown = Boolean(args?.asMarkdown);
 
           const result = await this.engine.run({
             goal,
@@ -168,23 +174,15 @@ export class DeliberateMcpServer {
             fileContent,
           });
 
+          const contentText = asMarkdown
+            ? Synthesizer.exportToMarkdown(result)
+            : JSON.stringify(result, null, 2);
+
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(
-                  {
-                    status: 'success',
-                    file_evaluated: filePath,
-                    adversarial_critiques: result.councilDebates,
-                    discovered_failure_modes: result.blueprint.failureModesAndMitigations,
-                    required_invariants: result.blueprint.coreInvariants,
-                    recommended_remediation_steps: result.blueprint.implementationSteps,
-                    remediated_code_skeleton: result.blueprint.codeSkeleton,
-                  },
-                  null,
-                  2
-                ),
+                text: contentText,
               },
             ],
           };
@@ -192,14 +190,14 @@ export class DeliberateMcpServer {
 
         if (name === 'deliberate_council_debate') {
           const goal = String(args?.goal || '');
-          const personas = Array.isArray(args?.personas)
-            ? (args.personas as PersonaId[])
-            : undefined;
+          const personas = args?.personas as PersonaId[] | undefined;
+          const context = args?.context ? String(args.context) : undefined;
 
           const result = await this.engine.run({
             goal,
             mode: 'council',
             personas,
+            context,
           });
 
           return {
@@ -208,10 +206,10 @@ export class DeliberateMcpServer {
                 type: 'text',
                 text: JSON.stringify(
                   {
-                    status: 'success',
-                    council_critiques: result.councilDebates,
-                    synthesized_invariants: result.blueprint.coreInvariants,
-                    trade_off_matrix: result.paretoMatrix,
+                    goal: result.goal,
+                    debates: result.councilDebates,
+                    synthesis: result.blueprint.winningArchitecture,
+                    invariants: result.blueprint.coreInvariants,
                   },
                   null,
                   2
@@ -223,26 +221,22 @@ export class DeliberateMcpServer {
 
         throw new Error(`Unknown tool: ${name}`);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
         return {
+          content: [
+            {
+              type: 'text',
+              text: `Deliberate Error: ${(err as Error).message}`,
+            },
+          ],
           isError: true,
-          content: [{ type: 'text', text: `Deliberate Error: ${message}` }],
         };
       }
     });
   }
 
-  async startStdio() {
+  async start() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
+    console.error('Deliberate MCP Server running on stdio');
   }
-}
-
-// Entrypoint for MCP executable
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = new DeliberateMcpServer();
-  server.startStdio().catch((err) => {
-    console.error('Fatal MCP Server error:', err);
-    process.exit(1);
-  });
 }
