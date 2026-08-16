@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('1.0.0');
+  .version('1.0.1');
 
 // Brainstorm Command
 program
