@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.9.0');
+  .version('1.0.0');
 
 // Brainstorm Command
 program
@@ -552,6 +552,92 @@ program
       await fs.writeFile(samplePath, JSON.stringify(sampleContent, null, 2), 'utf-8');
       console.log(picocolors.green(`✔ Created custom persona template at ${picocolors.bold(samplePath)}!`));
       console.log(picocolors.dim('Edit this file to define domain-specific council members for your team.\n'));
+    }
+  });
+
+// Topology Management Command
+program
+  .command('topology')
+  .description('List available thinking topologies or create a custom project topology')
+  .argument('[action]', 'Action: list | init', 'list')
+  .action(async (action) => {
+    const { TopologyRegistry } = await import('../core/topologies/registry.js');
+
+    if (action === 'list') {
+      console.log(picocolors.bold(picocolors.cyan('\n🧠 Deliberate Systematic Thinking Topologies:\n')));
+      const all = TopologyRegistry.getAll();
+      for (const t of all) {
+        console.log(`  • ${picocolors.bold(t.title)} (${picocolors.yellow(t.type)})`);
+        console.log(`    ${picocolors.dim(t.description)}\n`);
+      }
+      return;
+    }
+
+    if (action === 'init') {
+      const samplePath = path.resolve(process.cwd(), 'deliberate.topologies.json');
+      const sampleContent = [
+        {
+          type: 'chaos-engineering',
+          title: 'Chaos & Blast Radius Deconstruction',
+          description: 'Simulate sudden network partitions, corrupted disk writes, and runaway cascading dependencies.',
+          promptTemplate: 'Identify 3 unrecoverable chaos scenarios and propose hard circuit breaker invariants.'
+        }
+      ];
+      await fs.writeFile(samplePath, JSON.stringify(sampleContent, null, 2), 'utf-8');
+      console.log(picocolors.green(`✔ Created custom topology template at ${picocolors.bold(samplePath)}!`));
+    }
+  });
+
+// Interactive Council Interview Command ("Grill Me" Mode)
+program
+  .command('interview <goal>')
+  .alias('grill-me')
+  .description('Interactive Council Q&A interview to resolve underspecified requirements before deliberating')
+  .option('-p, --provider <provider>', 'LLM provider')
+  .action(async (goal: string, options) => {
+    DeliberateTui.printBanner();
+    console.log(picocolors.bold(picocolors.magenta(`\n🥊 Convening Adversarial Council Interview for: "${goal}"...\n`)));
+
+    const { ProviderFactory } = await import('../core/providers/factory.js');
+    const { CouncilInterviewer } = await import('../core/interview.js');
+    const provider = await ProviderFactory.create(options.provider);
+    const interviewer = new CouncilInterviewer(provider);
+
+    const spinner = ora('Formulating sharp adversarial questions...').start();
+    const questions = await interviewer.generateQuestions(goal);
+    spinner.stop();
+
+    console.log(picocolors.bold(picocolors.cyan('Answer these clarifying questions to eliminate design ambiguity:\n')));
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i]!;
+      console.log(`  ${picocolors.bold(picocolors.yellow(`[${q.persona}]`))} ${picocolors.white(q.question)}`);
+      console.log(`  ${picocolors.dim(`↳ Why it matters: ${q.whyItMatters}`)}\n`);
+    }
+
+    console.log(picocolors.dim('Run brainstorm with your answers: npx deliberate-ai brainstorm "<goal>" -c "<answers>"\n'));
+  });
+
+// Automated GitHub Release Command
+program
+  .command('release [tagName]')
+  .description('Publish official GitHub Release with release notes via GitHub REST API')
+  .option('-t, --title <title>', 'Release title', 'Deliberate Production Release')
+  .action(async (tagName: string | undefined, options) => {
+    DeliberateTui.printBanner();
+    const { GitHubReleasePublisher } = await import('../core/github_release.js');
+    const tag = tagName || 'v1.0.0';
+
+    const res = await GitHubReleasePublisher.publish({
+      tagName: tag,
+      releaseTitle: options.title || `${tag}: Production GA Release`,
+      bodyMarkdown: `### ⚡ Deliberate ${tag} — Production Release\n\nSystem-2 multi-agent deliberation and adversarial reasoning engine for AI coding agents.`,
+    });
+
+    if (res.success) {
+      console.log(picocolors.bold(picocolors.green(`\n✔ Successfully published GitHub Release at: ${res.url}\n`)));
+    } else {
+      console.log(picocolors.yellow(`\n⚠ ${res.error}`));
+      console.log(`👉 Publish in 1 click: ${picocolors.cyan(picocolors.underline(res.url))}\n`);
     }
   });
 

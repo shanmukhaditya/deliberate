@@ -262,7 +262,41 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(diff.criteriaDiffs.length > 0);
     assert.ok(diff.summary.includes('Architecture evolution'));
   });
+
+  it('should formulate sharp interview clarifying questions (PRD-17)', async () => {
+    const { CouncilInterviewer } = await import('../src/core/interview.js');
+    const { MockProvider } = await import('../src/core/providers/mock.js');
+    const interviewer = new CouncilInterviewer(new MockProvider());
+    const questions = await interviewer.generateQuestions('Build distributed ledger');
+    assert.ok(questions.length >= 3);
+    assert.ok(questions[0]?.question.length > 0);
+    assert.ok(questions[0]?.whyItMatters.length > 0);
+  });
+
+  it('should dynamically register custom thinking topologies (PRD-18)', () => {
+    TopologyRegistry.register({
+      type: 'chaos-engineering' as any,
+      title: 'Chaos & Blast Radius Deconstruction',
+      description: 'Simulate disk failure and network partitions',
+      promptTemplate: 'Simulate 3 chaos scenarios',
+    });
+
+    const custom = TopologyRegistry.get('chaos-engineering');
+    assert.strictEqual(custom.title, 'Chaos & Blast Radius Deconstruction');
+    assert.ok(custom.buildPrompt({ goal: 'Test' }).includes('Chaos & Blast Radius'));
+  });
+
+  it('should generate valid GitHub Release URL fallback (PRD-19)', async () => {
+    const { GitHubReleasePublisher } = await import('../src/core/github_release.js');
+    const res = await GitHubReleasePublisher.publish({
+      tagName: 'v1.0.0',
+      releaseTitle: 'v1.0.0: Production Release',
+      bodyMarkdown: 'Release notes',
+    });
+    assert.ok(res.url.includes('https://github.com/shanmukhaditya/deliberate/releases/'));
+  });
 });
+
 
 
 
