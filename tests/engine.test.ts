@@ -165,5 +165,32 @@ describe('Deliberate Core Reasoning Suite', () => {
 
     assert.strictEqual(result.councilDebates.length, 2);
   });
+
+  it('should safely extract git diff without throwing (PRD-09)', async () => {
+    const { GitHelper } = await import('../src/core/git.js');
+    const diff = await GitHelper.getDiff();
+    assert.strictEqual(typeof diff.hasDiff, 'boolean');
+    assert.strictEqual(typeof diff.summary, 'string');
+  });
+
+  it('should materialize code scaffolding to disk (PRD-10)', async () => {
+    const { CodebaseScaffolder } = await import('../src/core/scaffolder.js');
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Build typed WebSocket actor',
+      mode: 'flash',
+      provider: 'mock',
+    });
+
+    const res = await CodebaseScaffolder.scaffold(result, {
+      outDir: './scratch/test_scaffold',
+      filename: 'test_actor.ts',
+      overwrite: true,
+    });
+
+    assert.ok(res.bytesWritten > 0);
+    assert.ok(res.path.includes('test_actor.ts'));
+  });
 });
+
 

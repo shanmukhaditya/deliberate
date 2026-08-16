@@ -9,6 +9,8 @@ import { DeliberateTui } from './tui.js';
 import { DeliberateMcpServer } from '../mcp/server.js';
 import { Synthesizer } from '../core/synthesizer.js';
 import { ADRGenerator } from '../core/adr.js';
+import { GitHelper } from '../core/git.js';
+import { CodebaseScaffolder } from '../core/scaffolder.js';
 import { DeliberationMode, PersonaId } from '../core/types.js';
 
 const program = new Command();
@@ -16,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.4.0');
+  .version('0.6.0');
 
 // Brainstorm Command
 program
@@ -31,6 +33,7 @@ program
   .option('--show-debate', 'Show verbatim persona debates and attack vectors')
   .option('--export <filepath>', 'Export full architectural blueprint to file (Markdown or JSON)')
   .option('--adr <filepath>', 'Export Architectural Decision Record (ADR) in MADR format')
+  .option('--scaffold [outDir]', 'Directly materialize the synthesized code skeleton into project files')
   .option('--json', 'Output raw JSON to stdout (ideal for piping into agents)')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
@@ -111,7 +114,16 @@ program
         await fs.mkdir(path.dirname(adrPath), { recursive: true });
         await fs.writeFile(adrPath, adrContent, 'utf-8');
         if (!isJson) {
-          console.log(picocolors.green(`✔ Architectural Decision Record (ADR) saved to ${picocolors.bold(adrPath)}\n`));
+          console.log(picocolors.green(`✔ Architectural Decision Record (ADR) saved to ${picocolors.bold(adrPath)}`));
+        }
+      }
+
+      // Handle direct scaffolding if requested
+      if (options.scaffold) {
+        const outDir = typeof options.scaffold === 'string' ? options.scaffold : './src/architecture';
+        const scaffoldResult = await CodebaseScaffolder.scaffold(result, { outDir });
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Scaffolding materialized to ${picocolors.bold(scaffoldResult.path)} (${scaffoldResult.bytesWritten} bytes)\n`));
         }
       }
     } catch (err: unknown) {
@@ -123,34 +135,50 @@ program
 
 // Red-Team Command
 program
-  .command('red-team <file>')
-  .description('Adversarially stress-test a target source file against concurrency, security, and scale failures')
+  .command('red-team [file]')
+  .description('Adversarially stress-test a target source file or uncommitted git diff against failures')
   .option('-g, --goal <goal>', 'What the target code is trying to achieve', 'Stress-test code invariants')
+  .option('--git', 'Automatically extract and red-team uncommitted git changes')
+  .option('--staged', 'Automatically extract and red-team staged git changes')
   .option('-p, --provider <provider>', 'LLM provider')
   .option('-v, --verbose', 'Show verbatim persona critiques')
   .option('--show-debate', 'Show verbatim persona critiques')
   .option('--export <filepath>', 'Export red-team audit report to file')
   .option('--json', 'Output raw JSON')
-  .action(async (targetFile: string, options) => {
+  .action(async (targetFile: string | undefined, options) => {
     const isJson = Boolean(options.json);
     const showDebate = Boolean(options.verbose || options.showDebate);
 
     if (!isJson) DeliberateTui.printBanner();
 
-    const absPath = path.resolve(process.cwd(), targetFile);
     let content = '';
+    let filePath = targetFile || 'git_diff';
 
-    try {
-      content = await fs.readFile(absPath, 'utf-8');
-    } catch {
-      console.error(picocolors.red(`Error: Could not read file at ${absPath}`));
-      process.exit(1);
+    if (options.git || options.staged || !targetFile) {
+      const gitResult = await GitHelper.getDiff(Boolean(options.staged));
+      if (!gitResult.hasDiff) {
+        console.log(picocolors.yellow(`\n⚠ ${gitResult.summary}\n`));
+        return;
+      }
+      content = gitResult.diffText;
+      filePath = `git_diff (${gitResult.filesChanged.length} files: ${gitResult.filesChanged.slice(0, 3).join(', ')})`;
+      if (!isJson) {
+        console.log(picocolors.cyan(`🔍 Inspecting ${gitResult.summary}...\n`));
+      }
+    } else {
+      const absPath = path.resolve(process.cwd(), targetFile);
+      try {
+        content = await fs.readFile(absPath, 'utf-8');
+      } catch {
+        console.error(picocolors.red(`Error: Could not read file at ${absPath}`));
+        process.exit(1);
+      }
     }
 
     const spinner = isJson
       ? null
       : ora({
-          text: picocolors.red(`Summoning Red-Team Council for ${targetFile}...`),
+          text: picocolors.red(`Summoning Red-Team Council for ${filePath}...`),
           color: 'red',
         }).start();
 
@@ -161,7 +189,7 @@ program
         goal: options.goal,
         mode: 'red-team',
         provider: options.provider,
-        filePath: targetFile,
+        filePath,
         fileContent: content,
       });
 
@@ -188,6 +216,29 @@ program
     } catch (err: unknown) {
       if (spinner) spinner.fail(picocolors.red('Red-team deliberation failed.'));
       console.error(err);
+      process.exit(1);
+    }
+  });
+
+// Direct Scaffold Command
+program
+  .command('scaffold <blueprintFile>')
+  .description('Materialize an architectural blueprint (JSON or Markdown) into runnable project code files')
+  .option('-o, --out-dir <dir>', 'Target output directory', './src/architecture')
+  .option('-w, --overwrite', 'Overwrite existing files if present', false)
+  .action(async (blueprintFile: string, options) => {
+    DeliberateTui.printBanner();
+    const absPath = path.resolve(process.cwd(), blueprintFile);
+
+    try {
+      const fileContent = await fs.readFile(absPath, 'utf-8');
+      const res = await CodebaseScaffolder.scaffold(fileContent, {
+        outDir: options.outDir,
+        overwrite: options.overwrite,
+      });
+      console.log(picocolors.green(`\n✔ Successfully scaffolded code to ${picocolors.bold(res.path)} (${res.bytesWritten} bytes)!\n`));
+    } catch (err: unknown) {
+      console.error(picocolors.red(`Error: ${(err as Error).message}`));
       process.exit(1);
     }
   });
