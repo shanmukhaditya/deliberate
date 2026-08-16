@@ -32,6 +32,7 @@ export interface DeliberationConfig {
   provider?: string;
   model?: string;
   temperature?: number;
+  rounds?: number;
   maxRounds?: number;
   constraints?: string[];
 }
@@ -49,11 +50,16 @@ export interface PersonaDefinition {
 export interface PersonaCritique {
   personaId: PersonaId;
   personaName: string;
+  round?: number;
   coreCritique: string;
   strengths: string[];
   vulnerabilities: string[];
   requiredInvariants: string[];
   proposedAlternative?: string;
+  rebuttals?: {
+    targetPersona: string;
+    critique: string;
+  }[];
 }
 
 export interface TopologyOutput {
@@ -114,15 +120,25 @@ export interface ArchitecturalBlueprint {
   codeSkeleton?: string;
 }
 
+export interface DeliberationTelemetry {
+  roundsCompleted: number;
+  totalPromptTokens: number;
+  totalCompletionTokens: number;
+  totalTokens: number;
+  providersUsed: string[];
+}
+
 export interface DeliberationResult {
   goal: string;
   mode: DeliberationMode;
+  context?: string;
   topologiesExecuted: TopologyType[];
   topologyOutputs: TopologyOutput[];
   councilDebates: PersonaCritique[];
   paretoMatrix: CandidateArchitecture[];
   blueprint: ArchitecturalBlueprint;
   executionTimeMs: number;
+  telemetry?: DeliberationTelemetry;
 }
 
 // Zod schemas for structured runtime validation

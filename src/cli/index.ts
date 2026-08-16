@@ -8,6 +8,7 @@ import { DeliberationEngine } from '../core/engine.js';
 import { DeliberateTui } from './tui.js';
 import { DeliberateMcpServer } from '../mcp/server.js';
 import { Synthesizer } from '../core/synthesizer.js';
+import { ADRGenerator } from '../core/adr.js';
 import { DeliberationMode, PersonaId } from '../core/types.js';
 
 const program = new Command();
@@ -15,25 +16,28 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.3.0');
+  .version('0.4.0');
 
 // Brainstorm Command
 program
   .command('brainstorm <goal>')
   .description('Run deep systematic ideation and adversarial council debate on a system or feature')
   .option('-m, --mode <mode>', 'Deliberation mode: flash, council, deep-explore', 'council')
+  .option('-r, --rounds <rounds>', 'Number of dialectical debate rounds (1 to 5)', '1')
   .option('-p, --provider <provider>', 'LLM provider: gemini, anthropic, openai, deepseek, ollama, mock')
   .option('--model <model>', 'Specific model identifier')
   .option('-i, --interactive', 'Interactively select models and personas before running')
   .option('-v, --verbose', 'Show verbatim persona debates and attack vectors')
   .option('--show-debate', 'Show verbatim persona debates and attack vectors')
   .option('--export <filepath>', 'Export full architectural blueprint to file (Markdown or JSON)')
+  .option('--adr <filepath>', 'Export Architectural Decision Record (ADR) in MADR format')
   .option('--json', 'Output raw JSON to stdout (ideal for piping into agents)')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
   .action(async (goal: string, options) => {
     const isJson = Boolean(options.json);
     const showDebate = Boolean(options.verbose || options.showDebate);
+    const rounds = options.rounds ? parseInt(options.rounds, 10) : 1;
 
     if (!isJson) {
       DeliberateTui.printBanner();
@@ -58,6 +62,7 @@ program
         {
           goal,
           mode: options.mode as DeliberationMode,
+          rounds,
           provider: options.provider,
           model: options.model,
           context: options.context,
@@ -94,7 +99,19 @@ program
         await fs.mkdir(path.dirname(targetPath), { recursive: true });
         await fs.writeFile(targetPath, exportContent, 'utf-8');
         if (!isJson) {
-          console.log(picocolors.green(`✔ Blueprint successfully exported to ${picocolors.bold(targetPath)}\n`));
+          console.log(picocolors.green(`✔ Blueprint successfully exported to ${picocolors.bold(targetPath)}`));
+        }
+      }
+
+      // Handle ADR export if requested
+      if (options.adr) {
+        const adrPath = path.resolve(process.cwd(), options.adr);
+        const adrContent = ADRGenerator.generate(result);
+
+        await fs.mkdir(path.dirname(adrPath), { recursive: true });
+        await fs.writeFile(adrPath, adrContent, 'utf-8');
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Architectural Decision Record (ADR) saved to ${picocolors.bold(adrPath)}\n`));
         }
       }
     } catch (err: unknown) {

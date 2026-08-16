@@ -5,6 +5,7 @@ import { PersonaRegistry } from '../src/core/personas/registry.js';
 import { TopologyRegistry } from '../src/core/topologies/registry.js';
 import { extractJsonFromResponse } from '../src/core/providers/base.js';
 import { Synthesizer } from '../src/core/synthesizer.js';
+import { ADRGenerator } from '../src/core/adr.js';
 
 describe('Deliberate Core Reasoning Suite', () => {
   it('should resolve all 6 personas from the registry with correct biases', () => {
@@ -44,6 +45,21 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(result.blueprint.coreInvariants.length > 0);
     assert.ok(result.paretoMatrix.length >= 1);
     assert.ok(result.executionTimeMs >= 0);
+    assert.ok(result.telemetry !== undefined);
+  });
+
+  it('should execute multi-round dialectical cross-examination debate (PRD-04)', async () => {
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Design high-frequency trading ledger',
+      mode: 'council',
+      rounds: 2,
+      provider: 'mock',
+    });
+
+    assert.strictEqual(result.telemetry?.roundsCompleted, 2);
+    assert.strictEqual(result.councilDebates.length, 6);
+    assert.strictEqual(result.councilDebates[0]?.round, 2);
   });
 
   it('should execute red-team mode against code invariants', async () => {
@@ -105,5 +121,22 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(md.includes('## 🛡️ Core Architectural Invariants'));
     assert.ok(md.includes('## 🚀 Step-by-Step Implementation Roadmap'));
     assert.ok(md.includes('Synthesized autonomously via [Deliberate]'));
+  });
+
+  it('should generate standard Architectural Decision Records in MADR format (PRD-05)', async () => {
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Adopt Event Sourced CQRS for Order Ledger',
+      mode: 'flash',
+      provider: 'mock',
+    });
+
+    const adr = ADRGenerator.generate(result, 42);
+    assert.ok(adr.includes('# ADR-0042:'));
+    assert.ok(adr.includes('## Context and Problem Statement'));
+    assert.ok(adr.includes('## Decision Drivers'));
+    assert.ok(adr.includes('## Considered Options'));
+    assert.ok(adr.includes('## Decision Outcome'));
+    assert.ok(adr.includes('## Core Invariants & Compliance Rules'));
   });
 });

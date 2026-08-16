@@ -159,6 +159,16 @@ ${picocolors.white(bp.executiveSummary)}
       );
     }
 
+    // 8. Deliberation Telemetry Footer
+    if (result.telemetry) {
+      const tel = result.telemetry;
+      console.log(
+        picocolors.dim(
+          `⏱️  ${result.executionTimeMs}ms  |  🔄 Rounds: ${tel.roundsCompleted}  |  📊 Tokens: ${tel.totalTokens || 'N/A'} (Prompt: ${tel.totalPromptTokens}, Completion: ${tel.totalCompletionTokens})  |  🤖 Providers: ${tel.providersUsed.join(', ')}`
+        )
+      );
+    }
+
     console.log('\n');
   }
 }
