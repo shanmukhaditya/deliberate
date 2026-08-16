@@ -255,6 +255,44 @@ program
     }
   });
 
+// Persona Management Command
+program
+  .command('persona')
+  .description('List available personas or create a custom project persona')
+  .argument('[action]', 'Action: list | init', 'list')
+  .action(async (action) => {
+    const { PersonaRegistry } = await import('../core/personas/registry.js');
+
+    if (action === 'list') {
+      console.log(picocolors.bold(picocolors.cyan('\n🏛️  Deliberate Adversarial Council Personas:\n')));
+      const all = PersonaRegistry.getAll();
+      for (const p of all) {
+        console.log(`  • ${picocolors.bold(p.name)} (${picocolors.yellow(p.id)})`);
+        console.log(`    ${picocolors.dim(p.definition.stance)}`);
+        console.log(`    Cognitive Duty: ${picocolors.white(p.definition.cognitiveDuty)}\n`);
+      }
+      return;
+    }
+
+    if (action === 'init') {
+      const samplePath = path.resolve(process.cwd(), 'deliberate.personas.json');
+      const sampleContent = [
+        {
+          id: 'compliance',
+          name: 'The Compliance & Governance Officer',
+          title: 'Staff Compliance Architect',
+          stance: 'Enforce SOC2, GDPR, HIPAA, and Zero-Trust data governance.',
+          cognitiveDuty: 'Audit data lineage, tenant boundaries, and cryptographic logging.',
+          bias: 'resilience',
+          systemPrompt: 'You are the Compliance Officer. You demand strict tenant data isolation, audit logs, and data retention policies.'
+        }
+      ];
+      await fs.writeFile(samplePath, JSON.stringify(sampleContent, null, 2), 'utf-8');
+      console.log(picocolors.green(`✔ Created custom persona template at ${picocolors.bold(samplePath)}!`));
+      console.log(picocolors.dim('Edit this file to define domain-specific council members for your team.\n'));
+    }
+  });
+
 // Config Command (Interactive Model & Persona Selector)
 program
   .command('config')

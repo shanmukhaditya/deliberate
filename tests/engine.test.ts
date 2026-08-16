@@ -139,4 +139,31 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(adr.includes('## Decision Outcome'));
     assert.ok(adr.includes('## Core Invariants & Compliance Rules'));
   });
+
+  it('should dynamically register and execute custom domain personas (PRD-07)', async () => {
+    PersonaRegistry.register({
+      id: 'finops' as any,
+      name: 'The FinOps Optimizer',
+      title: 'Cloud Cost Architect',
+      stance: 'Eliminate idle egress and compute costs.',
+      cognitiveDuty: 'Enforce serverless/spot execution boundaries.',
+      bias: 'efficiency',
+      systemPrompt: 'You are the FinOps Optimizer. You hate cloud waste.',
+    });
+
+    const finops = PersonaRegistry.get('finops');
+    assert.strictEqual(finops.name, 'The FinOps Optimizer');
+    assert.strictEqual(finops.definition.bias, 'efficiency');
+
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Design multi-region data warehouse',
+      mode: 'council',
+      personas: ['finops' as any, 'architect'],
+      provider: 'mock',
+    });
+
+    assert.strictEqual(result.councilDebates.length, 2);
+  });
 });
+
