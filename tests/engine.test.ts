@@ -213,7 +213,37 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(typeof res.summaryMarkdown === 'string');
     assert.ok(res.summaryMarkdown.includes('Deliberate CI'));
   });
+
+  it('should render HTML visual dashboard and start local server (PRD-13)', async () => {
+    const { DashboardServer } = await import('../src/core/server.js');
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Design Web Dashboard Visualizer',
+      mode: 'flash',
+      provider: 'mock',
+    });
+
+    const html = DashboardServer.renderHtml(result);
+    assert.ok(html.includes('⚡ Deliberate Dashboard:'));
+    assert.ok(html.includes('Pareto Trade-Off Radar'));
+    assert.ok(html.includes('Hard Architectural Invariants'));
+
+    const serverInfo = await DashboardServer.start(result, 4500);
+    assert.ok(serverInfo.port >= 4500);
+    assert.ok(serverInfo.url.includes('http://localhost:'));
+    serverInfo.close();
+  });
+
+  it('should execute multi-provider benchmark suite (PRD-14)', async () => {
+    const { BenchmarkRunner } = await import('../src/core/benchmark.js');
+    const results = await BenchmarkRunner.run('Test benchmark goal', ['mock']);
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0]?.provider, 'mock');
+    assert.strictEqual(results[0]?.available, true);
+    assert.ok(results[0]?.executionTimeMs >= 0);
+  });
 });
+
 
 
 

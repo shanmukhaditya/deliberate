@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.7.0');
+  .version('0.8.0');
 
 // Brainstorm Command
 program
@@ -35,6 +35,7 @@ program
   .option('--adr <filepath>', 'Export Architectural Decision Record (ADR) in MADR format')
   .option('--scaffold [outDir]', 'Directly materialize the synthesized code skeleton into project files')
   .option('--test-gen [outPath]', 'Generate runnable unit test suite enforcing architectural invariants')
+  .option('--ui', 'Start local browser dashboard visualizer upon completion')
   .option('--json', 'Output raw JSON to stdout (ideal for piping into agents)')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
@@ -136,6 +137,13 @@ program
         if (!isJson) {
           console.log(picocolors.green(`✔ Invariant test suite generated at ${picocolors.bold(testRes.path)}\n`));
         }
+      }
+
+      // Handle --ui browser dashboard
+      if (options.ui) {
+        const { DashboardServer } = await import('../core/server.js');
+        const { url } = await DashboardServer.start(result);
+        console.log(picocolors.bold(picocolors.magenta(`\n🌐 Visual Dashboard running at: ${picocolors.underline(url)} (Press Ctrl+C to exit)\n`)));
       }
     } catch (err: unknown) {
       if (spinner) spinner.fail(picocolors.red('Deliberation error occurred.'));
@@ -296,6 +304,76 @@ program
       console.error(picocolors.red(`CI Audit failed: ${(err as Error).message}`));
       process.exit(1);
     }
+  });
+
+// Visual Web Dashboard Command
+program
+  .command('ui [blueprintFile]')
+  .alias('serve')
+  .description('Start local web server and open interactive Visual Blueprint Dashboard')
+  .option('-p, --port <port>', 'Port number to listen on', '3333')
+  .action(async (blueprintFile: string | undefined, options) => {
+    DeliberateTui.printBanner();
+    const { DashboardServer } = await import('../core/server.js');
+    let result: DeliberationResult;
+
+    if (blueprintFile) {
+      const absPath = path.resolve(process.cwd(), blueprintFile);
+      const raw = await fs.readFile(absPath, 'utf-8');
+      result = JSON.parse(raw) as DeliberationResult;
+    } else {
+      // Create quick sample deliberation result
+      const engine = new DeliberationEngine();
+      result = await engine.run({
+        goal: 'Deliberate Interactive Web Dashboard',
+        mode: 'flash',
+        provider: 'mock',
+      });
+    }
+
+    const port = parseInt(options.port, 10) || 3333;
+    const serverInfo = await DashboardServer.start(result, port);
+    console.log(picocolors.bold(picocolors.green(`\n🚀 Deliberate Visual Dashboard is LIVE at:`)));
+    console.log(`   ${picocolors.bold(picocolors.cyan(picocolors.underline(serverInfo.url)))}\n`);
+    console.log(picocolors.dim('   Interactive Pareto Radar, Collapsible Debates & Code Scaffolds.\n   Press Ctrl+C to stop.\n'));
+  });
+
+// Multi-Provider Benchmark Command
+program
+  .command('benchmark <goal>')
+  .description('Benchmark latency, tokens, and Pareto scores across all LLM providers')
+  .action(async (goal: string) => {
+    DeliberateTui.printBanner();
+    const { BenchmarkRunner } = await import('../core/benchmark.js');
+    console.log(picocolors.bold(picocolors.cyan(`\n⚡ Running Multi-Provider Benchmark for: "${goal}"...\n`)));
+
+    const spinner = ora('Evaluating provider latency and outputs...').start();
+    const results = await BenchmarkRunner.run(goal);
+    spinner.stop();
+
+    const Table = (await import('cli-table3')).default;
+    const table = new Table({
+      head: [
+        picocolors.bold('Provider'),
+        picocolors.bold('Model'),
+        picocolors.bold('Status'),
+        picocolors.bold('Latency (ms)'),
+        picocolors.bold('Pareto Score'),
+      ],
+      colWidths: [18, 25, 15, 15, 15],
+    });
+
+    for (const r of results) {
+      table.push([
+        picocolors.bold(r.provider),
+        picocolors.dim(r.model),
+        r.available ? picocolors.green('✔ Available') : picocolors.red('✖ Offline'),
+        r.available ? `${r.executionTimeMs}ms` : '-',
+        r.available ? `${r.overallScore}/10` : '-',
+      ]);
+    }
+
+    console.log(table.toString() + '\n');
   });
 
 // Council Debate Command
