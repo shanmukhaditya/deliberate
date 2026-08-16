@@ -1,0 +1,31 @@
+name: Deliberate PR Invariant Audit
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deliberate-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Deliberate CI Invariant Audit
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx -y deliberate-ai ci --summary ./pr-deliberate-summary.md

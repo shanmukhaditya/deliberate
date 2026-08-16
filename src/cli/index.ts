@@ -11,14 +11,14 @@ import { Synthesizer } from '../core/synthesizer.js';
 import { ADRGenerator } from '../core/adr.js';
 import { GitHelper } from '../core/git.js';
 import { CodebaseScaffolder } from '../core/scaffolder.js';
-import { DeliberationMode, PersonaId } from '../core/types.js';
+import { DeliberationMode, DeliberationResult, PersonaId } from '../core/types.js';
 
 const program = new Command();
 
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.6.1');
+  .version('0.7.0');
 
 // Brainstorm Command
 program
@@ -34,6 +34,7 @@ program
   .option('--export <filepath>', 'Export full architectural blueprint to file (Markdown or JSON)')
   .option('--adr <filepath>', 'Export Architectural Decision Record (ADR) in MADR format')
   .option('--scaffold [outDir]', 'Directly materialize the synthesized code skeleton into project files')
+  .option('--test-gen [outPath]', 'Generate runnable unit test suite enforcing architectural invariants')
   .option('--json', 'Output raw JSON to stdout (ideal for piping into agents)')
   .option('-c, --context <context>', 'Additional architectural context')
   .option('--constraints <constraints...>', 'List of hard constraints')
@@ -123,7 +124,17 @@ program
         const outDir = typeof options.scaffold === 'string' ? options.scaffold : './src/architecture';
         const scaffoldResult = await CodebaseScaffolder.scaffold(result, { outDir });
         if (!isJson) {
-          console.log(picocolors.green(`✔ Scaffolding materialized to ${picocolors.bold(scaffoldResult.path)} (${scaffoldResult.bytesWritten} bytes)\n`));
+          console.log(picocolors.green(`✔ Scaffolding materialized to ${picocolors.bold(scaffoldResult.path)} (${scaffoldResult.bytesWritten} bytes)`));
+        }
+      }
+
+      // Handle invariant test generation if requested
+      if (options.testGen) {
+        const { InvariantTestGenerator } = await import('../core/test_generator.js');
+        const testPath = typeof options.testGen === 'string' ? options.testGen : './tests/generated_invariants.test.ts';
+        const testRes = await InvariantTestGenerator.writeToFile(result, testPath);
+        if (!isJson) {
+          console.log(picocolors.green(`✔ Invariant test suite generated at ${picocolors.bold(testRes.path)}\n`));
         }
       }
     } catch (err: unknown) {
@@ -239,6 +250,50 @@ program
       console.log(picocolors.green(`\n✔ Successfully scaffolded code to ${picocolors.bold(res.path)} (${res.bytesWritten} bytes)!\n`));
     } catch (err: unknown) {
       console.error(picocolors.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// Invariant Test Generator Command
+program
+  .command('test-gen <blueprintFile>')
+  .description('Generate runnable unit test suite enforcing architectural invariants from a blueprint')
+  .option('-o, --out-file <path>', 'Output test file path', './tests/generated_invariants.test.ts')
+  .action(async (blueprintFile: string, options) => {
+    DeliberateTui.printBanner();
+    const { InvariantTestGenerator } = await import('../core/test_generator.js');
+    const absPath = path.resolve(process.cwd(), blueprintFile);
+
+    try {
+      const raw = await fs.readFile(absPath, 'utf-8');
+      const parsed = JSON.parse(raw) as DeliberationResult;
+      const res = await InvariantTestGenerator.writeToFile(parsed, options.outFile);
+      console.log(picocolors.green(`\n✔ Successfully generated invariant tests at ${picocolors.bold(res.path)} (${res.bytesWritten} bytes)!\n`));
+    } catch (err: unknown) {
+      console.error(picocolors.red(`Error: ${(err as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// CI Pull Request Auditor Command
+program
+  .command('ci')
+  .description('Run automated CI Pull Request Invariant & Risk Audit')
+  .option('-s, --summary <filepath>', 'Save step summary markdown to file')
+  .option('-p, --provider <provider>', 'LLM provider')
+  .action(async (options) => {
+    const { CiHelper } = await import('../core/ci.js');
+    console.log(picocolors.bold(picocolors.cyan('\n⚡ Running Deliberate CI Pull Request Invariant Audit...\n')));
+
+    try {
+      const { summaryMarkdown } = await CiHelper.runPrAudit({
+        summaryFile: options.summary,
+        provider: options.provider,
+      });
+      console.log(summaryMarkdown);
+      console.log(picocolors.green('✔ CI Audit completed successfully!\n'));
+    } catch (err: unknown) {
+      console.error(picocolors.red(`CI Audit failed: ${(err as Error).message}`));
       process.exit(1);
     }
   });

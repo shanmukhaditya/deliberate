@@ -191,6 +191,29 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.ok(res.bytesWritten > 0);
     assert.ok(res.path.includes('test_actor.ts'));
   });
+
+  it('should generate runnable TypeScript invariant test suites (PRD-11)', async () => {
+    const { InvariantTestGenerator } = await import('../src/core/test_generator.js');
+    const engine = new DeliberationEngine();
+    const result = await engine.run({
+      goal: 'Design resilient lock-free broker',
+      mode: 'flash',
+      provider: 'mock',
+    });
+
+    const code = InvariantTestGenerator.generateCode(result);
+    assert.ok(code.includes("import { describe, it } from 'node:test'"));
+    assert.ok(code.includes('Invariant 1:'));
+    assert.ok(code.includes('Threat Mitigation 1:'));
+  });
+
+  it('should run CI PR invariant audit without throwing (PRD-12)', async () => {
+    const { CiHelper } = await import('../src/core/ci.js');
+    const res = await CiHelper.runPrAudit({ provider: 'mock' });
+    assert.ok(typeof res.summaryMarkdown === 'string');
+    assert.ok(res.summaryMarkdown.includes('Deliberate CI'));
+  });
 });
+
 
 
