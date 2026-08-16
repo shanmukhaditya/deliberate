@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name('deliberate')
   .description('Deep Ideation & Multi-Agent Deliberation for AI Coding Agents')
-  .version('0.8.0');
+  .version('0.9.0');
 
 // Brainstorm Command
 program
@@ -374,6 +374,84 @@ program
     }
 
     console.log(table.toString() + '\n');
+  });
+
+// Git Hook Manager Command
+program
+  .command('hook')
+  .description('Manage Git pre-push and pre-commit protection hooks')
+  .argument('[action]', 'Action: install | remove | status', 'install')
+  .action(async (action) => {
+    DeliberateTui.printBanner();
+    const { GitHookManager } = await import('../core/hooks.js');
+
+    if (action === 'install') {
+      const res = await GitHookManager.install();
+      if (res.success) {
+        console.log(picocolors.green(`\n✔ ${res.message}`));
+        console.log(picocolors.dim(`   Hook location: ${res.hookPath}\n`));
+      } else {
+        console.log(picocolors.red(`\n✖ ${res.message}\n`));
+      }
+    } else if (action === 'remove' || action === 'uninstall') {
+      const res = await GitHookManager.remove();
+      console.log(picocolors.yellow(`\n✔ ${res.message}\n`));
+    }
+  });
+
+// Architecture Evolution Differ Command
+program
+  .command('diff <blueprintA> <blueprintB>')
+  .description('Semantically diff two architectural blueprints to track invariant evolution and Pareto deltas')
+  .action(async (bpAFile: string, bpBFile: string) => {
+    DeliberateTui.printBanner();
+    const { BlueprintDiffer } = await import('../core/differ.js');
+    const pathA = path.resolve(process.cwd(), bpAFile);
+    const pathB = path.resolve(process.cwd(), bpBFile);
+
+    try {
+      const rawA = await fs.readFile(pathA, 'utf-8');
+      const rawB = await fs.readFile(pathB, 'utf-8');
+      const a = JSON.parse(rawA) as DeliberationResult;
+      const b = JSON.parse(rawB) as DeliberationResult;
+
+      const diff = BlueprintDiffer.diff(a, b);
+      console.log(picocolors.bold(picocolors.cyan('\n⚡ Architectural Blueprint Evolution Diff:\n')));
+      console.log(`  ${picocolors.dim('Blueprint A:')} ${picocolors.white(diff.titleA)} (Score: ${diff.overallScoreA}/10)`);
+      console.log(`  ${picocolors.dim('Blueprint B:')} ${picocolors.white(diff.titleB)} (Score: ${diff.overallScoreB}/10)`);
+      console.log(`  ${picocolors.bold('Score Delta:')} ${diff.overallScoreDelta >= 0 ? picocolors.green(`+${diff.overallScoreDelta}`) : picocolors.red(diff.overallScoreDelta.toString())}\n`);
+
+      const Table = (await import('cli-table3')).default;
+      const table = new Table({
+        head: [picocolors.bold('Criterion'), picocolors.bold('A'), picocolors.bold('B'), picocolors.bold('Delta')],
+        colWidths: [20, 10, 10, 12],
+      });
+
+      for (const c of diff.criteriaDiffs) {
+        table.push([
+          c.criterion.toUpperCase(),
+          c.scoreA.toString(),
+          c.scoreB.toString(),
+          c.delta > 0 ? picocolors.green(`+${c.delta}`) : c.delta < 0 ? picocolors.red(c.delta.toString()) : '0',
+        ]);
+      }
+      console.log(table.toString());
+
+      if (diff.invariantsAdded.length) {
+        console.log(picocolors.green('\n➕ Invariants Added:'));
+        diff.invariantsAdded.forEach((inv) => console.log(`  + ${inv}`));
+      }
+
+      if (diff.invariantsRemoved.length) {
+        console.log(picocolors.red('\n➖ Invariants Removed:'));
+        diff.invariantsRemoved.forEach((inv) => console.log(`  - ${inv}`));
+      }
+
+      console.log('\n');
+    } catch (err: unknown) {
+      console.error(picocolors.red(`Diff error: ${(err as Error).message}`));
+      process.exit(1);
+    }
   });
 
 // Council Debate Command

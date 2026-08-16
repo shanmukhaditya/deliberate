@@ -242,7 +242,28 @@ describe('Deliberate Core Reasoning Suite', () => {
     assert.strictEqual(results[0]?.available, true);
     assert.ok(results[0]?.executionTimeMs >= 0);
   });
+
+  it('should manage Git pre-push hooks safely (PRD-15)', async () => {
+    const { GitHookManager } = await import('../src/core/hooks.js');
+    const res = await GitHookManager.install();
+    assert.strictEqual(typeof res.success, 'boolean');
+    assert.strictEqual(typeof res.message, 'string');
+  });
+
+  it('should calculate architectural blueprint evolution diffs (PRD-16)', async () => {
+    const { BlueprintDiffer } = await import('../src/core/differ.js');
+    const engine = new DeliberationEngine();
+
+    const bp1 = await engine.run({ goal: 'V1 Architecture', mode: 'flash', provider: 'mock' });
+    const bp2 = await engine.run({ goal: 'V2 Architecture with Strict Invariants', mode: 'flash', provider: 'mock' });
+
+    const diff = BlueprintDiffer.diff(bp1, bp2);
+    assert.strictEqual(typeof diff.overallScoreDelta, 'number');
+    assert.ok(diff.criteriaDiffs.length > 0);
+    assert.ok(diff.summary.includes('Architecture evolution'));
+  });
 });
+
 
 
 
